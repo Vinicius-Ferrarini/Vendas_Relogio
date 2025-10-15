@@ -1,0 +1,129 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #f7f7f7;
+  color: #333;
+}
+
+header {
+  background-color: #222;
+  color: white;
+  text-align: center;
+  padding: 1.5rem 0;
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 15px;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: scale(1.02);
+}
+
+.card img {
+  width: 100%;
+  border-radius: 10px;
+  height: auto;
+}
+
+.card h3 {
+  margin: 10px 0 5px;
+  font-size: 1.1rem;
+}
+
+.card p {
+  margin: 0 0 10px;
+  font-weight: bold;
+  color: #222;
+  font-size: 1rem;
+}
+
+.checkbox {
+  margin-top: 10px;
+  font-size: 0.95rem;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+}
+
+button {
+  background-color: #25d366;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #20b358;
+}
+
+/* 🌟 Responsividade para celulares */
+@media (max-width: 768px) {
+  header {
+    font-size: 1.4rem;
+    padding: 1rem 0;
+  }
+
+  .container {
+    margin: 15px auto;
+    padding: 0 10px;
+    gap: 15px;
+  }
+
+  .card {
+    padding: 10px;
+  }
+
+  .card h3 {
+    font-size: 1rem;
+  }
+
+  .card p {
+    font-size: 0.95rem;
+  }
+
+  button {
+    width: 90%;
+    font-size: 1rem;
+    padding: 12px;
+  }
+}
+
+/* 🌟 Responsividade extra (celulares muito pequenos) */
+@media (max-width: 480px) {
+  header {
+    font-size: 1.2rem;
+  }
+
+  .card {
+    padding: 8px;
+  }
+
+  button {
+    width: 95%;
+    font-size: 0.95rem;
+  }
+}
