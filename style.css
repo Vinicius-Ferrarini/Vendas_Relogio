@@ -3,6 +3,8 @@
   --card: #fff;
   --accent: #25d366;
   --muted: #6b7280;
+  --oferta-bg: #ef4444; /* Vermelho para ofertas */
+  --timer-bg: #ffc107; /* Amarelo para timer */
 }
 
 *{box-sizing:border-box}
@@ -27,6 +29,7 @@ header{
   z-index:20;
 }
 
+/* Antiga barra de controle (não mais sticky) */
 .controls{
   display:flex;
   gap:12px;
@@ -35,9 +38,18 @@ header{
   padding:12px;
   background:var(--card);
   box-shadow:0 2px 6px rgba(2,6,23,0.06);
-  position:sticky;
-  top:64px;
+  /* removido 'position: sticky' e 'top: 64px' */
   z-index:15;
+}
+
+/* NOVO: Wrapper para filtros em linha */
+.filters-section-wrapper {
+  max-width: 1100px;
+  margin: 16px auto -10px auto;
+  padding: 12px;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
 }
 
 .filters-section{
@@ -47,6 +59,7 @@ header{
   flex-wrap:wrap;
   padding:6px;
   border-radius:8px;
+  justify-content: center; /* Centraliza os filtros */
 }
 
 .filters-section h3{
@@ -54,6 +67,7 @@ header{
   margin:0 0 6px 0;
   font-size:0.95rem;
   color:var(--muted);
+  text-align: center; /* Centraliza título do filtro */
 }
 
 select, input[type="number"], button{
@@ -86,7 +100,10 @@ button{
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-/* card */
+/* =================================== */
+/* ATUALIZAÇÃO DO CARD DE PRODUTO      */
+/* =================================== */
+
 .card{
   background:var(--card);
   border-radius:12px;
@@ -97,6 +114,7 @@ button{
   flex-direction:column;
   gap:8px;
   transition:transform .15s ease, box-shadow .15s ease;
+  position: relative; /* Para badges e timers */
 }
 
 .card:hover{
@@ -104,11 +122,78 @@ button{
   box-shadow:0 12px 30px rgba(15,23,42,0.08);
 }
 
-.card img{
-  width:100%;
-  height:180px;
-  object-fit:cover;
-  border-radius:8px;
+/* NOVO: Imagem principal do card */
+.card-img-main {
+  width: 100%;
+  height: 180px; /* Altura fixa para imagem principal */
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-img-main a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.card-img-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+.card-img-main a:hover img {
+  transform: scale(1.05);
+}
+
+/* NOVO: Container de miniaturas */
+.card-img-thumbs {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  height: 50px; /* Altura fixa para miniaturas */
+}
+
+.card-img-thumbs img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.card-img-thumbs img:hover {
+  border-color: var(--muted);
+}
+
+/* NOVO: Badge de Oferta (ajustado) */
+.card-badge {
+  position:absolute;
+  right:10px;
+  top:10px;
+  background: var(--oferta-bg);
+  color:#fff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  z-index: 2;
+}
+
+/* NOVO: Timer de Contagem Regressiva */
+.card-timer {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  background: var(--timer-bg);
+  color: #333;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  z-index: 2;
 }
 
 .card h3{
@@ -131,7 +216,10 @@ button{
   justify-content:center;
 }
 
-/* footer */
+/* =================================== */
+/* ESTILOS DO FOOTER                   */
+/* =================================== */
+
 footer{
   position:sticky;
   bottom:0;
@@ -149,14 +237,115 @@ footer{
   border-radius:10px;
 }
 
-/* responsive tuning for mobile: force 2 columns on small screens */
+/* =================================== */
+/* NOVO: PÁGINA DE DETALHES            */
+/* =================================== */
+
+.detalhe-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+}
+
+.link-voltar {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+}
+.link-voltar:hover {
+  color: #000;
+}
+
+#detalheProdutoContainer .loading {
+  text-align: center;
+  font-size: 1.2rem;
+  color: var(--muted);
+  padding: 40px 0;
+}
+
+/* Imagem principal da página de detalhes */
+#detalhe-img-main {
+  width: 100%;
+  max-height: 500px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+/* Miniaturas na página de detalhes (reutiliza estilo) */
+.detalhe-container .card-img-thumbs {
+  height: 80px; /* Maiores na página de detalhe */
+  justify-content: flex-start; /* Alinha à esquerda */
+  margin-bottom: 20px;
+}
+
+.detalhe-container .card-img-thumbs img {
+  width: 80px;
+  height: 80px;
+}
+
+.detalhe-descricao {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap; /* Preserva quebras de linha da planilha */
+  margin-top: 10px;
+}
+
+.detalhe-nome {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+}
+
+.detalhe-preco {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+
+
+/* =================================== */
+/* RESPONSIVIDADE                      */
+/* =================================== */
+
 @media (max-width:600px){
   .container{
     grid-template-columns: repeat(2, 1fr);
     gap:10px;
   }
-  .card img{
-    height:140px;
+  /* Ajusta altura da imagem principal no mobile */
+  .card-img-main {
+    height: 140px;
   }
-  .controls{ padding:10px 6px; top:54px; }
+  .controls{ padding:10px 6px; }
+
+  /* Ajusta miniaturas no mobile */
+  .card-img-thumbs {
+    height: 40px;
+  }
+  .card-img-thumbs img {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .detalhe-container .card-img-thumbs {
+    height: 60px;
+  }
+  .detalhe-container .card-img-thumbs img {
+    width: 60px;
+    height: 60px;
+  }
+  .detalhe-nome {
+    font-size: 1.5rem;
+  }
+  .detalhe-preco {
+    font-size: 1.3rem;
+  }
 }

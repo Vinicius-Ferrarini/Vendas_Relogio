@@ -9,48 +9,46 @@
 <body>
   <header>⏱️ Leandrinho Relógios</header>
 
-  <section class="controls">
-    <div class="filters-section">
-      <h3>Filtros - Relógios</h3>
-      <select id="filtroGeneroRelogio">
-        <option value="">Todos os gêneros</option>
-        <option value="masculino">Masculino</option>
-        <option value="feminino">Feminino</option>
-      </select>
-
-      <select id="filtroCategoriaRelogio">
-        <option value="">Todas as categorias</option>
-      </select>
-
-      <input type="number" id="precoMinRelogio" placeholder="Mín. R$" />
-      <input type="number" id="precoMaxRelogio" placeholder="Máx. R$" />
-      <button id="filtrarRelogio">Aplicar - Relógios</button>
-    </div>
-
-    <div class="filters-section">
-      <h3>Filtros - Acessórios</h3>
-      <select id="filtroGeneroAcessorio">
-        <option value="">Todos os gêneros</option>
-        <option value="masculino">Masculino</option>
-        <option value="feminino">Feminino</option>
-      </select>
-
-      <select id="filtroCategoriaAcessorio">
-        <option value="">Todas as categorias</option>
-      </select>
-
-      <input type="number" id="precoMinAcessorio" placeholder="Mín. R$" />
-      <input type="number" id="precoMaxAcessorio" placeholder="Máx. R$" />
-      <button id="filtrarAcessorio">Aplicar - Acessórios</button>
-    </div>
-  </section>
-
   <main>
     <h2 class="titulo-secao">🔥 Ofertas da semana</h2>
     <div class="container" id="listaOfertas"></div>
 
+    <section class="filters-section-wrapper">
+      <div class="filters-section">
+        <h3>Filtros - Relógios</h3>
+        <select id="filtroGeneroRelogio">
+          <option value="">Todos os gêneros</option>
+          <option value="masculino">Masculino</option>
+          <option value="feminino">Feminino</option>
+        </select>
+        <select id="filtroCategoriaRelogio">
+          <option value="">Todas as categorias</option>
+        </select>
+        <input type="number" id="precoMinRelogio" placeholder="Mín. R$" />
+        <input type="number" id="precoMaxRelogio" placeholder="Máx. R$" />
+        <button id="filtrarRelogio">Aplicar - Relógios</button>
+      </div>
+    </section>
+    
     <h2 class="titulo-secao">⌚ Relógios</h2>
     <div class="container" id="listaRelogios"></div>
+
+    <section class="filters-section-wrapper">
+      <div class="filters-section">
+        <h3>Filtros - Acessórios</h3>
+        <select id="filtroGeneroAcessorio">
+          <option value="">Todos os gêneros</option>
+          <option value="masculino">Masculino</option>
+          <option value="feminino">Feminino</option>
+        </select>
+        <select id="filtroCategoriaAcessorio">
+          <option value="">Todas as categorias</option>
+        </select>
+        <input type="number" id="precoMinAcessorio" placeholder="Mín. R$" />
+        <input type="number" id="precoMaxAcessorio" placeholder="Máx. R$" />
+        <button id="filtrarAcessorio">Aplicar - Acessórios</button>
+      </div>
+    </section>
 
     <h2 class="titulo-secao">🧩 Acessórios</h2>
     <div class="container" id="listaAcessorios"></div>
