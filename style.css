@@ -14,26 +14,6 @@ body{
   background:var(--bg);
   color:#111827;
   -webkit-font-smoothing:antialiased;
-  /* ---- INÍCIO DA MUDANÇA ---- */
-  /* Coloque o link para sua imagem aqui */
-  background-color: burlywood;
-
-  /* Faz a imagem ficar fixa e não rolar com a página */
-  background-attachment: fixed; 
-
-  /* Garante que a imagem cubra toda a tela sem distorcer */
-  background-size: cover; 
-
-  /* Centraliza a imagem */
-  background-position: center center;
-
-  /* Impede que a imagem se repita */
-  background-repeat: no-repeat; 
-  /* ---- FIM DA MUDANÇA ---- */
-
-  color:#111827;
-  -webkit-font-smoothing:antialiased;
-
 }
 
 header{
@@ -98,13 +78,26 @@ button{
   font-weight:600;
 }
 
+/* =================================== */
+/* --- MUDANÇA PRINCIPAL NO LAYOUT --- */
+/* =================================== */
 .container{
   max-width:1100px;
   margin:0 auto 20px;
   padding:0 16px;
-  display:grid;
   gap:14px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  
+  /* 1. Trocamos 'grid' por 'flex' */
+  display: flex;
+  
+  /* 2. Permitimos que os cards quebrem a linha */
+  flex-wrap: wrap;
+  
+  /* 3. Centralizamos os cards (resolve o req. de 1 ou 2 produtos) */
+  justify-content: center; 
+  
+  /* 4. Removemos as colunas de grid que esticavam os itens */
+  /* grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); */
 }
 
 /* =================================== */
@@ -112,6 +105,9 @@ button{
 /* =================================== */
 
 .card{
+  /* 5. Damos um TAMANHO FIXO para o card (estilo Mercado Livre) */
+  width: 240px; 
+
   background:var(--card);
   border-radius:12px;
   box-shadow:0 6px 18px rgba(15,23,42,0.06);
@@ -121,7 +117,7 @@ button{
   flex-direction:column;
   gap:8px;
   transition:transform .15s ease, box-shadow .15s ease;
-  position: relative; /* Para badges e timers */
+  position: relative; 
 }
 
 .card:hover{
@@ -132,9 +128,16 @@ button{
 /* Imagem principal do card */
 .card-img-main {
   width: 100%;
-  height: 180px; /* Altura fixa para imagem principal */
+  
+  /* 6. Removemos a altura fixa e usamos 'aspect-ratio' para criar um quadrado */
+  /* height: 180px; */ 
+  aspect-ratio: 1 / 1;
+  
   border-radius: 8px;
-  overflow: hidden;
+  
+  /* 7. Adicionamos padding para a imagem 'contain' ter um respiro */
+  padding: 10px; 
+  border-bottom: 1px solid #eee;
 }
 
 .card-img-main a {
@@ -146,7 +149,10 @@ button{
 .card-img-main img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  
+  /* 8. Trocamos 'cover' por 'contain' para não distorcer/cortar */
+  object-fit: contain; 
+  
   transition: transform 0.2s ease;
 }
 .card-img-main a:hover img {
@@ -293,7 +299,7 @@ footer{
 #detalhe-img-main {
   width: 100%;
   max-height: 500px;
-  object-fit: cover;
+  object-fit: cover; /* Pode manter 'cover' aqui ou trocar para 'contain' */
   border-radius: 8px;
   margin-bottom: 10px;
 }
@@ -468,13 +474,28 @@ footer{
 /* =================================== */
 
 @media (max-width:600px){
+  
+  /* --- MUDANÇA --- */
+  /* 9. Removemos a regra de grid responsiva, pois o flexbox
+     já cuida disso automaticamente. */
+  /*
   .container{
     grid-template-columns: repeat(2, 1fr);
     gap:10px;
   }
-  .card-img-main {
-    height: 140px;
+  */
+  
+  /* 10. Removemos a altura fixa da imagem no mobile, pois
+     o 'aspect-ratio' já faz o trabalho. */
+  /*
+  .card img{
+    height:140px;
   }
+  */
+  
+  .controls{ padding:10px 6px; }
+
+  /* Estas regras podem ser mantidas */
   .card-img-thumbs {
     height: 35px;
   }
