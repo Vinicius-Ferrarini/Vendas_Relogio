@@ -1,4 +1,4 @@
-// script.js
+// script.js (CORRIGIDO)
 
 // ======= CONFIG =======
 const SHEET_ID = "1gU34_gLsxTHDy_nxhtg91-Ld6VaU4Zba65dBkZD-2aQ";
@@ -90,13 +90,9 @@ function handleRemoverItem(productId) {
   cart = cart.filter(item => item.id.toString() !== productId.toString());
   saveCart(cart);
   
-  // Re-renderiza o modal para atualizar a lista e o total
   abrirModalCarrinho();
-  
-  // Atualiza o botão principal do footer
   updateCartButtonText();
   
-  // Re-abilita o botão "Adicionar" no card do produto na página
   const cardBtn = document.querySelector(`.btn-add-cart[data-id="${productId}"]`);
   if (cardBtn) {
     cardBtn.textContent = 'Adicionar ao Carrinho';
@@ -119,18 +115,16 @@ function handleEnviarPedido() {
   const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   window.open(wa, '_blank');
   
-  // Pergunta se quer limpar o carrinho após enviar
   if (confirm("Pedido enviado! Deseja limpar o carrinho?")) {
-    saveCart([]); // Limpa o carrinho
-    updateCartButtonText(); // Atualiza o botão do footer
+    saveCart([]); 
+    updateCartButtonText(); 
     
-    // Reseta todos os botões "Adicionado" dos cards
     document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => {
       btn.textContent = 'Adicionar ao Carrinho';
       btn.disabled = false;
     });
     
-    fecharModalCarrinho(); // Fecha o modal
+    fecharModalCarrinho(); 
   }
 }
 
@@ -148,6 +142,11 @@ async function fetchSheetJson(sheetId, gid = 0) {
   return JSON.parse(jsonStr);
 }
 
+/**
+ * --- CORRIGIDO ---
+ * Mapeia colunas da planilha para um objeto de produto.
+ * Lógica de PrecoOferta movida para ANTES de Preco.
+ */
 function mapRowToProduct(row, headers) {
   const obj = { images: [] };
   
@@ -158,6 +157,21 @@ function mapRowToProduct(row, headers) {
 
     if (header.match(/^id$/)) obj.id = val;
     else if (header.match(/nome|name|produto/)) obj.nome = val;
+    
+    // --- CORREÇÃO: Lógica de PrecoOferta vem ANTES de Preco ---
+    else if (header.match(/pre[cç]o[ \-]?oferta/)) { 
+      if (typeof val === "number") {
+        obj.precoOferta = val;
+      } else {
+        const cleaned = String(val).replace(/[R$\s.]/g, "").replace(",", ".");
+        const n = parseFloat(cleaned);
+        if (!isNaN(n) && n > 0) { // Só define se for um número válido e maior que 0
+          obj.precoOferta = n;
+        }
+      }
+    }
+    
+    // Preço Normal (Agora só vai pegar a coluna "Preco" e não "PrecoOferta")
     else if (header.match(/pre[cç]o|price|valor/)) {
       if (typeof val === "number") obj.preco = val;
       else {
@@ -166,6 +180,8 @@ function mapRowToProduct(row, headers) {
         obj.preco = isNaN(n) ? 0 : n;
       }
     }
+    // --- FIM DA CORREÇÃO ---
+
     else if (header.match(/categoria|category/)) obj.categoria = val.toString().toLowerCase();
     else if (header.match(/genero|gênero|genêro|sex|sexo/)) obj.genero = val.toString().toLowerCase();
     else if (header.match(/tipo|type/)) obj.estilo = val.toString().toLowerCase(); 
@@ -193,8 +209,17 @@ function mapRowToProduct(row, headers) {
   if (obj.images.length === 0) {
     obj.images.push("https://via.placeholder.com/800x800?text=Sem+Imagem");
   }
+  
+  // Lógica de Preço (troca)
+  if (obj.precoOferta !== undefined && obj.precoOferta < obj.preco) {
+    obj.precoOriginal = obj.preco; // Guarda o preço antigo
+    obj.preco = obj.precoOferta;   // Define o preço de oferta como o principal
+    obj.oferta = true; // Força a ser oferta se tiver preço promocional
+  }
+
   return obj;
 }
+
 
 function parseGvizResponse(resp) {
   const cols = resp.table.cols.map(c => c.label || c.id || "");
@@ -234,7 +259,12 @@ function criarCardHTML(p) {
     .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`)
     .join('');
 
-  const precoFmt = formatPrice(p.preco);
+  // Lógica de Preço para o HTML
+  const precoFmt = formatPrice(p.preco); 
+  const precoOriginalFmt = p.precoOriginal
+    ? `<span class="preco-original">${formatPrice(p.precoOriginal)}</span>`
+    : '';
+
   const linkDetalhe = `detalhe.html?data=${encodeURIComponent(JSON.stringify(p))}`;
   const badgeHTML = p.destaque ? `<div class="card-badge">${escapeHtml(p.destaque)}</div>` : '';
   const timerHTML = p.dataOferta ? `<div class="card-timer" id="timer-${p.id}"></div>` : '';
@@ -256,7 +286,12 @@ function criarCardHTML(p) {
     </div>
     <div class="card-img-thumbs">${thumbsHTML}</div>
     <h3>${escapeHtml(p.nome)}</h3>
-    <p>${precoFmt}</p>
+    
+    <p class="preco-container">
+      ${precoOriginalFmt}
+      <span class="preco-atual">${precoFmt}</span>
+    </p>
+    
     <button class="btn-add-cart" data-id="${escapeHtml(p.id)}" ${btnDisabled}>
       ${btnText}
     </button>
@@ -381,6 +416,7 @@ function handleAddToCartClick(e) {
   const cart = getCart();
   if (cart.find(p => p.id === product.id)) return;
   
+  // Salva o preço final (que já é o de oferta, se houver)
   cart.push({ id: product.id, nome: product.nome, preco: product.preco });
   saveCart(cart);
   updateCartButtonText();
@@ -479,10 +515,8 @@ async function loadAndRender(){
   // LISTENERS DO MODAL E BOTÃO PRINCIPAL
   // ===========================================
   
-  // Botão principal (footer) agora abre o modal
   const btnWhats = document.getElementById('enviarWhatsApp');
   btnWhats.addEventListener('click', () => {
-    // Se o carrinho estiver vazio, não faz nada (ou mostra alerta)
     if (getCart().length === 0) {
       alert('Seu carrinho está vazio.');
       return;
@@ -490,17 +524,14 @@ async function loadAndRender(){
     abrirModalCarrinho();
   });
   
-  // Botão "X" para fechar
   document.getElementById('fecharModal').addEventListener('click', fecharModalCarrinho);
   
-  // Clicar fora do modal (no overlay) para fechar
   document.getElementById('modalCarrinho').addEventListener('click', (e) => {
     if (e.target.classList.contains('modal-overlay')) {
       fecharModalCarrinho();
     }
   });
   
-  // Botão "Remover" (dentro do modal)
   document.getElementById('listaCarrinhoModal').addEventListener('click', (e) => {
     if (e.target.classList.contains('remover-item-btn')) {
       const productId = e.target.dataset.id;
@@ -508,7 +539,6 @@ async function loadAndRender(){
     }
   });
   
-  // Botão "Enviar Pedido" (dentro do modal)
   document.getElementById('enviarPedidoModal').addEventListener('click', handleEnviarPedido);
 }
 

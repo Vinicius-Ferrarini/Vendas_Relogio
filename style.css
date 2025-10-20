@@ -79,7 +79,7 @@ button{
 }
 
 /* =================================== */
-/* --- MUDANÇA PRINCIPAL NO LAYOUT --- */
+/* LAYOUT DOS PRODUTOS (FLEXBOX)       */
 /* =================================== */
 .container{
   max-width:1100px;
@@ -87,17 +87,9 @@ button{
   padding:0 16px;
   gap:14px;
   
-  /* 1. Trocamos 'grid' por 'flex' */
   display: flex;
-  
-  /* 2. Permitimos que os cards quebrem a linha */
   flex-wrap: wrap;
-  
-  /* 3. Centralizamos os cards (resolve o req. de 1 ou 2 produtos) */
   justify-content: center; 
-  
-  /* 4. Removemos as colunas de grid que esticavam os itens */
-  /* grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); */
 }
 
 /* =================================== */
@@ -105,9 +97,7 @@ button{
 /* =================================== */
 
 .card{
-  /* 5. Damos um TAMANHO FIXO para o card (estilo Mercado Livre) */
   width: 240px; 
-
   background:var(--card);
   border-radius:12px;
   box-shadow:0 6px 18px rgba(15,23,42,0.06);
@@ -128,14 +118,8 @@ button{
 /* Imagem principal do card */
 .card-img-main {
   width: 100%;
-  
-  /* 6. Removemos a altura fixa e usamos 'aspect-ratio' para criar um quadrado */
-  /* height: 180px; */ 
   aspect-ratio: 1 / 1;
-  
   border-radius: 8px;
-  
-  /* 7. Adicionamos padding para a imagem 'contain' ter um respiro */
   padding: 10px; 
   border-bottom: 1px solid #eee;
 }
@@ -149,10 +133,7 @@ button{
 .card-img-main img {
   width: 100%;
   height: 100%;
-  
-  /* 8. Trocamos 'cover' por 'contain' para não distorcer/cortar */
   object-fit: contain; 
-  
   transition: transform 0.2s ease;
 }
 .card-img-main a:hover img {
@@ -163,8 +144,8 @@ button{
 .card-img-thumbs {
   display: flex;
   gap: 5px;
-  justify-content: center; /* Alinha 4 miniaturas */
-  height: 45px; /* Altura fixa para miniaturas */
+  justify-content: center; 
+  height: 45px;
 }
 
 .card-img-thumbs img {
@@ -214,11 +195,33 @@ button{
   font-size:1rem;
 }
 
-.card p{
-  margin:0;
-  font-weight:700;
-  color:#0f1724;
+/* =================================== */
+/* --- ESTILOS DE PREÇO (CORRIGIDO) ---*/
+/* =================================== */
+
+/* Container do preço no Card */
+.card .preco-container {
+  margin: 0;
+  font-weight: 700;
+  color: #0f1724;
 }
+
+/* Preço atual (de oferta ou normal) no Card */
+.card .preco-atual {
+  font-size: 1.25rem;
+  color: var(--accent); /* Cor de destaque (verde) */
+}
+
+/* Preço original (riscado) no Card */
+.card .preco-original {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--muted); /* Cinza */
+  text-decoration: line-through; /* Riscado */
+  margin-right: 5px;
+}
+/* --- FIM DA CORREÇÃO --- */
+
 
 /* Estilo para o botão "Adicionar ao Carrinho" */
 .btn-add-cart {
@@ -299,15 +302,15 @@ footer{
 #detalhe-img-main {
   width: 100%;
   max-height: 500px;
-  object-fit: cover; /* Pode manter 'cover' aqui ou trocar para 'contain' */
+  object-fit: cover; 
   border-radius: 8px;
   margin-bottom: 10px;
 }
 
 /* Miniaturas na página de detalhes (reutiliza estilo) */
 .detalhe-container .card-img-thumbs {
-  height: 80px; /* Maiores na página de detalhe */
-  justify-content: flex-start; /* Alinha à esquerda */
+  height: 80px; 
+  justify-content: flex-start; 
   margin-bottom: 20px;
 }
 
@@ -320,7 +323,7 @@ footer{
   font-size: 1.1rem;
   line-height: 1.6;
   color: #333;
-  white-space: pre-wrap; /* Preserva quebras de linha da planilha */
+  white-space: pre-wrap; 
   margin-top: 10px;
 }
 
@@ -330,12 +333,31 @@ footer{
   margin: 0 0 10px 0;
 }
 
+/* =================================== */
+/* --- ESTILOS DE PREÇO (CORRIGIDO) ---*/
+/* =================================== */
+
+/* Container do preço nos Detalhes */
 .detalhe-preco {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--accent);
   margin-bottom: 20px;
 }
+
+/* Preço atual (de oferta ou normal) nos Detalhes */
+.detalhe-preco .preco-atual {
+  font-size: 1.5rem; 
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Preço original (riscado) nos Detalhes */
+.detalhe-preco .preco-original {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--muted);
+  text-decoration: line-through;
+  margin-right: 8px;
+}
+/* --- FIM DA CORREÇÃO --- */
 
 /* Botão de adicionar ao carrinho na página de detalhes */
 .detalhe-btn-whats {
@@ -474,28 +496,8 @@ footer{
 /* =================================== */
 
 @media (max-width:600px){
-  
-  /* --- MUDANÇA --- */
-  /* 9. Removemos a regra de grid responsiva, pois o flexbox
-     já cuida disso automaticamente. */
-  /*
-  .container{
-    grid-template-columns: repeat(2, 1fr);
-    gap:10px;
-  }
-  */
-  
-  /* 10. Removemos a altura fixa da imagem no mobile, pois
-     o 'aspect-ratio' já faz o trabalho. */
-  /*
-  .card img{
-    height:140px;
-  }
-  */
-  
   .controls{ padding:10px 6px; }
 
-  /* Estas regras podem ser mantidas */
   .card-img-thumbs {
     height: 35px;
   }
@@ -514,7 +516,10 @@ footer{
   .detalhe-nome {
     font-size: 1.5rem;
   }
-  .detalhe-preco {
+  .detalhe-preco .preco-atual {
     font-size: 1.3rem;
+  }
+  .detalhe-preco .preco-original {
+    font-size: 0.9rem;
   }
 }

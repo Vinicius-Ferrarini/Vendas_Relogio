@@ -1,6 +1,6 @@
 // detalhe.js
 
-// REQ 2/3: Config e funções do carrinho
+// Config e funções do carrinho
 const WHATSAPP_NUMBER = "5543999705837";
 
 function getCart() {
@@ -23,7 +23,8 @@ function escapeHtml(str){
 }
 
 /**
- * Renderiza os detalhes do produto no container
+ * --- ATUALIZADO ---
+ * Renderiza os detalhes do produto com o novo formato de preço.
  */
 function renderizarDetalhes(produto) {
   const container = document.getElementById('detalheProdutoContainer');
@@ -42,8 +43,13 @@ function renderizarDetalhes(produto) {
     .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`)
     .join('');
 
-  // Formata preço
+  // --- LÓGICA DE PREÇO ATUALIZADA ---
   const precoFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.preco || 0);
+  
+  const precoOriginalFmt = produto.precoOriginal
+    ? `<span class="preco-original">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.precoOriginal)}</span>`
+    : '';
+  // --- FIM DA LÓGICA ---
 
   // Formata descrição
   const descricaoHTML = produto.descricao ? escapeHtml(produto.descricao) : 'Nenhuma descrição disponível.';
@@ -63,7 +69,11 @@ function renderizarDetalhes(produto) {
     </div>
     
     <h1 class="detalhe-nome">${escapeHtml(produto.nome)}</h1>
-    <div class="detalhe-preco">${precoFmt}</div>
+    
+    <div class="detalhe-preco">
+      ${precoOriginalFmt}
+      <span class="preco-atual">${precoFmt}</span>
+    </div>
     
     <button class="btn-add-cart detalhe-btn-whats" id="detalheAddCart" ${btnDisabled}>
       ${btnText}
@@ -81,7 +91,6 @@ function renderizarDetalhes(produto) {
  */
 function adicionarClickHandlerMiniaturasDetalhe(container) {
   container.addEventListener('click', (e) => {
-    // Verifica se o clique foi em uma miniatura
     if (e.target.classList.contains('card-thumb')) {
       e.preventDefault();
       
@@ -98,10 +107,9 @@ function adicionarClickHandlerMiniaturasDetalhe(container) {
  * Inicialização da página de detalhes
  */
 document.addEventListener('DOMContentLoaded', () => {
-  let produto; // Armazena o produto para o listener do botão
+  let produto; 
 
   try {
-    // 1. Pega os parâmetros da URL
     const urlParams = new URLSearchParams(window.location.search);
     const dataString = urlParams.get('data');
 
@@ -109,17 +117,13 @@ document.addEventListener('DOMContentLoaded', () => {
       throw new Error('Nenhum dado de produto encontrado na URL.');
     }
 
-    // 2. Decodifica e faz o parse do JSON
     produto = JSON.parse(decodeURIComponent(dataString));
-    produto.id = produto.id.toString(); // Garante que ID seja string
+    produto.id = produto.id.toString(); 
 
-    // 3. Renderiza os detalhes
     renderizarDetalhes(produto);
     
-    // 4. Atualiza o título da página
     document.title = `${produto.nome || 'Detalhes'} - Leandrinho Relógios`;
     
-    // 5. Adiciona listener para o botão "Adicionar ao Carrinho"
     const btnAdd = document.getElementById('detalheAddCart');
     if (btnAdd) {
       btnAdd.addEventListener('click', () => {
@@ -127,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (cart.find(item => item.id === produto.id)) return;
 
+        // Salva o preço final (que já é o de oferta, se houver)
         cart.push({ id: produto.id, nome: produto.nome, preco: produto.preco });
         saveCart(cart);
         
