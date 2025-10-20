@@ -1,129 +1,162 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background-color: #f7f7f7;
-  color: #333;
+:root{
+  --bg: #f7f8fa;
+  --card: #fff;
+  --accent: #25d366;
+  --muted: #6b7280;
 }
 
-header {
-  background-color: #222;
-  color: white;
-  text-align: center;
-  padding: 1.5rem 0;
-  font-size: 1.8rem;
-  letter-spacing: 1px;
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter, "Segoe UI", Arial, sans-serif;
+  background:var(--bg);
+  color:#111827;
+  -webkit-font-smoothing:antialiased;
 }
 
-.container {
-  max-width: 1000px;
-  margin: 30px auto;
-  padding: 0 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+header{
+  background:#0f1724;
+  color:#fff;
+  text-align:center;
+  padding:1rem;
+  font-size:1.25rem;
+  font-weight:600;
+  letter-spacing:0.4px;
+  position:sticky;
+  top:0;
+  z-index:20;
 }
 
-.card {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 15px;
-  text-align: center;
-  transition: transform 0.2s ease;
+.controls{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:center;
+  padding:12px;
+  background:var(--card);
+  box-shadow:0 2px 6px rgba(2,6,23,0.06);
+  position:sticky;
+  top:64px;
+  z-index:15;
 }
 
-.card:hover {
-  transform: scale(1.02);
+.filters-section{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:6px;
+  border-radius:8px;
 }
 
-.card img {
-  width: 100%;
-  border-radius: 10px;
-  height: auto;
+.filters-section h3{
+  width:100%;
+  margin:0 0 6px 0;
+  font-size:0.95rem;
+  color:var(--muted);
 }
 
-.card h3 {
-  margin: 10px 0 5px;
-  font-size: 1.1rem;
+select, input[type="number"], button{
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid #d1d5db;
+  font-size:0.95rem;
 }
 
-.card p {
-  margin: 0 0 10px;
-  font-weight: bold;
-  color: #222;
-  font-size: 1rem;
+button{
+  background:var(--accent);
+  color:#fff;
+  border:0;
+  cursor:pointer;
 }
 
-.checkbox {
-  margin-top: 10px;
-  font-size: 0.95rem;
+.titulo-secao{
+  text-align:center;
+  margin:20px 0 8px;
+  color:#0f1724;
+  font-weight:600;
 }
 
-footer {
-  text-align: center;
-  padding: 20px;
+.container{
+  max-width:1100px;
+  margin:0 auto 20px;
+  padding:0 16px;
+  display:grid;
+  gap:14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-button {
-  background-color: #25d366;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  font-size: 1.1rem;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: 20px;
-  transition: background-color 0.3s ease;
+/* card */
+.card{
+  background:var(--card);
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(15,23,42,0.06);
+  padding:10px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  transition:transform .15s ease, box-shadow .15s ease;
 }
 
-button:hover {
-  background-color: #20b358;
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 12px 30px rgba(15,23,42,0.08);
 }
 
-/* 🌟 Responsividade para celulares */
-@media (max-width: 768px) {
-  header {
-    font-size: 1.4rem;
-    padding: 1rem 0;
+.card img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+.card h3{
+  margin:0;
+  font-size:1rem;
+}
+
+.card p{
+  margin:0;
+  font-weight:700;
+  color:#0f1724;
+}
+
+.checkbox{
+  margin-top:auto;
+  font-size:0.95rem;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:center;
+}
+
+/* footer */
+footer{
+  position:sticky;
+  bottom:0;
+  background:var(--card);
+  padding:12px;
+  text-align:center;
+  box-shadow:0 -6px 18px rgba(2,6,23,0.03);
+}
+
+#enviarWhatsApp{
+  width:100%;
+  max-width:420px;
+  padding:12px 14px;
+  font-size:1.05rem;
+  border-radius:10px;
+}
+
+/* responsive tuning for mobile: force 2 columns on small screens */
+@media (max-width:600px){
+  .container{
+    grid-template-columns: repeat(2, 1fr);
+    gap:10px;
   }
-
-  .container {
-    margin: 15px auto;
-    padding: 0 10px;
-    gap: 15px;
+  .card img{
+    height:140px;
   }
-
-  .card {
-    padding: 10px;
-  }
-
-  .card h3 {
-    font-size: 1rem;
-  }
-
-  .card p {
-    font-size: 0.95rem;
-  }
-
-  button {
-    width: 90%;
-    font-size: 1rem;
-    padding: 12px;
-  }
-}
-
-/* 🌟 Responsividade extra (celulares muito pequenos) */
-@media (max-width: 480px) {
-  header {
-    font-size: 1.2rem;
-  }
-
-  .card {
-    padding: 8px;
-  }
-
-  button {
-    width: 95%;
-    font-size: 0.95rem;
-  }
+  .controls{ padding:10px 6px; top:54px; }
 }
