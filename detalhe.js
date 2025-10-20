@@ -1,5 +1,16 @@
 // detalhe.js
 
+// REQ 2/3: Config e funções do carrinho (duplicadas de script.js para independência)
+const WHATSAPP_NUMBER = "5543999705837";
+
+function getCart() {
+  return JSON.parse(localStorage.getItem('leandrinhoCart') || '[]');
+}
+
+function saveCart(cart) {
+  localStorage.setItem('leandrinhoCart', JSON.stringify(cart));
+}
+
 // Função para escapar HTML (segurança)
 function escapeHtml(str){
   if(!str && str !== 0) return "";
@@ -26,11 +37,10 @@ function renderizarDetalhes(produto) {
   const images = produto.images && produto.images.length ? produto.images : [placeholder];
   const mainImg = images[0];
   
-  // Pega até 3 imagens para miniaturas (da 2ª até a 4ª)
-  // Na página de detalhes, podemos mostrar todas se quisermos, mas vamos manter 3 por consistência
-  const thumbnails = images.slice(1, 4); 
+  // REQ 1: Pega até 4 imagens para miniaturas (0, 1, 2, 3)
+  const thumbnails = images.slice(0, 4); 
   const thumbsHTML = thumbnails
-    .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`) // Reutiliza a classe .card-thumb
+    .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`)
     .join('');
 
   // Formata preço
@@ -38,6 +48,13 @@ function renderizarDetalhes(produto) {
 
   // Formata descrição
   const descricaoHTML = produto.descricao ? escapeHtml(produto.descricao) : 'Nenhuma descrição disponível.';
+
+  // REQ 2/3: Verifica status do carrinho para o botão
+  const cart = getCart();
+  // Garante que a comparação de ID seja string-para-string
+  const isInCart = cart.find(item => item.id.toString() === produto.id.toString());
+  const btnText = isInCart ? '✅ Já no carrinho' : 'Adicionar ao Carrinho';
+  const btnDisabled = isInCart ? 'disabled' : '';
 
   // Monta o HTML final
   container.innerHTML = `
@@ -49,6 +66,11 @@ function renderizarDetalhes(produto) {
     
     <h1 class="detalhe-nome">${escapeHtml(produto.nome)}</h1>
     <div class="detalhe-preco">${precoFmt}</div>
+    
+    <button class="btn-add-cart detalhe-btn-whats" id="detalheAddCart" ${btnDisabled}>
+      ${btnText}
+    </button>
+    
     <p class="detalhe-descricao">${descricaoHTML}</p>
   `;
   
@@ -78,6 +100,8 @@ function adicionarClickHandlerMiniaturasDetalhe(container) {
  * Inicialização da página de detalhes
  */
 document.addEventListener('DOMContentLoaded', () => {
+  let produto; // Armazena o produto para o listener do botão
+
   try {
     // 1. Pega os parâmetros da URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -88,13 +112,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 2. Decodifica e faz o parse do JSON
-    const produto = JSON.parse(decodeURIComponent(dataString));
+    produto = JSON.parse(decodeURIComponent(dataString));
+    // Garante que o ID do produto seja string
+    produto.id = produto.id.toString();
 
     // 3. Renderiza os detalhes
     renderizarDetalhes(produto);
     
     // 4. Atualiza o título da página
     document.title = `${produto.nome || 'Detalhes'} - Leandrinho Relógios`;
+    
+    // 5. REQ 2/3: Adiciona listener para o botão "Adicionar ao Carrinho"
+    const btnAdd = document.getElementById('detalheAddCart');
+    if (btnAdd) {
+      btnAdd.addEventListener('click', () => {
+        const cart = getCart();
+        
+        // Segurança: não adiciona se já estiver (botão deve estar desabilitado)
+        if (cart.find(item => item.id === produto.id)) return;
+
+        cart.push({ id: produto.id, nome: produto.nome, preco: produto.preco });
+        saveCart(cart);
+        
+        btnAdd.textContent = '✅ Adicionado!';
+        btnAdd.disabled = true;
+      });
+    }
 
   } catch (error) {
     console.error('Erro ao carregar detalhes do produto:', error);

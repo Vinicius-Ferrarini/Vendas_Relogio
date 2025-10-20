@@ -29,20 +29,7 @@ header{
   z-index:20;
 }
 
-/* Antiga barra de controle (não mais sticky) */
-.controls{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  justify-content:center;
-  padding:12px;
-  background:var(--card);
-  box-shadow:0 2px 6px rgba(2,6,23,0.06);
-  /* removido 'position: sticky' e 'top: 64px' */
-  z-index:15;
-}
-
-/* NOVO: Wrapper para filtros em linha */
+/* Wrapper para filtros em linha */
 .filters-section-wrapper {
   max-width: 1100px;
   margin: 16px auto -10px auto;
@@ -122,7 +109,7 @@ button{
   box-shadow:0 12px 30px rgba(15,23,42,0.08);
 }
 
-/* NOVO: Imagem principal do card */
+/* Imagem principal do card */
 .card-img-main {
   width: 100%;
   height: 180px; /* Altura fixa para imagem principal */
@@ -146,17 +133,18 @@ button{
   transform: scale(1.05);
 }
 
-/* NOVO: Container de miniaturas */
+/* Container de miniaturas */
 .card-img-thumbs {
   display: flex;
   gap: 5px;
-  justify-content: center;
-  height: 50px; /* Altura fixa para miniaturas */
+  justify-content: center; /* Alinha 4 miniaturas */
+  height: 45px; /* Altura fixa para miniaturas */
 }
 
+/* REQ 1: Miniaturas ajustadas para caber 4 */
 .card-img-thumbs img {
-  width: 50px;
-  height: 50px;
+  width: 45px; /* Reduzido de 50px */
+  height: 45px; /* Reduzido de 50px */
   object-fit: cover;
   border-radius: 6px;
   cursor: pointer;
@@ -168,7 +156,7 @@ button{
   border-color: var(--muted);
 }
 
-/* NOVO: Badge de Oferta (ajustado) */
+/* Badge de Oferta (ajustado) */
 .card-badge {
   position:absolute;
   right:10px;
@@ -182,7 +170,7 @@ button{
   z-index: 2;
 }
 
-/* NOVO: Timer de Contagem Regressiva */
+/* Timer de Contagem Regressiva */
 .card-timer {
   position: absolute;
   left: 10px;
@@ -207,14 +195,28 @@ button{
   color:#0f1724;
 }
 
-.checkbox{
-  margin-top:auto;
-  font-size:0.95rem;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  justify-content:center;
+/* REQ 2/3: Estilo para o botão "Adicionar ao Carrinho" */
+.btn-add-cart {
+  margin-top: auto; /* Pushes to bottom of card */
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
+.btn-add-cart:hover {
+  background: #1da453; /* Darker green */
+}
+.btn-add-cart:disabled {
+  background: var(--muted);
+  color: #eee;
+  cursor: not-allowed;
+}
+
 
 /* =================================== */
 /* ESTILOS DO FOOTER                   */
@@ -238,7 +240,7 @@ footer{
 }
 
 /* =================================== */
-/* NOVO: PÁGINA DE DETALHES            */
+/* PÁGINA DE DETALHES                  */
 /* =================================== */
 
 .detalhe-container {
@@ -310,6 +312,14 @@ footer{
   margin-bottom: 20px;
 }
 
+/* REQ 2: Botão de adicionar ao carrinho na página de detalhes */
+.detalhe-btn-whats {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
 
 /* =================================== */
 /* RESPONSIVIDADE                      */
@@ -326,13 +336,13 @@ footer{
   }
   .controls{ padding:10px 6px; }
 
-  /* Ajusta miniaturas no mobile */
+  /* REQ 1: Ajusta miniaturas no mobile para 4 */
   .card-img-thumbs {
-    height: 40px;
+    height: 35px;
   }
   .card-img-thumbs img {
-    width: 40px;
-    height: 40px;
+    width: 35px; /* Reduzido de 40px */
+    height: 35px; /* Reduzido de 40px */
   }
   
   .detalhe-container .card-img-thumbs {

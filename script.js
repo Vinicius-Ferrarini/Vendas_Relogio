@@ -13,6 +13,28 @@ let activeTimers = {
   listaOfertas: []
 };
 
+// REQ 2/3: Mapa global para fácil acesso aos dados do produto pelo ID
+let allProducts = new Map();
+
+// REQ 2/3: Funções de utilidade do Carrinho
+function getCart() {
+  return JSON.parse(localStorage.getItem('leandrinhoCart') || '[]');
+}
+
+function saveCart(cart) {
+  localStorage.setItem('leandrinhoCart', JSON.stringify(cart));
+}
+
+function updateCartButtonText() {
+  const btn = document.getElementById('enviarWhatsApp');
+  if (!btn) return;
+  const cart = getCart();
+  if (cart.length > 0) {
+    btn.textContent = `🟢 Ver Carrinho (${cart.length} ${cart.length > 1 ? 'itens' : 'item'})`;
+  } else {
+    btn.textContent = `🟢 Carrinho Vazio`;
+  }
+}
 
 /**
  * Faz fetch no endpoint gviz do Google Sheet (formato JSONP) e retorna JSON puro.
@@ -21,7 +43,6 @@ async function fetchSheetJson(sheetId, gid = 0) {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
   const res = await fetch(url);
   const txt = await res.text();
-  // resposta vem como:  /*O_o*/\ngoogle.visualization.Query.setResponse(<JSON>);
   const start = txt.indexOf('(');
   const end = txt.lastIndexOf(')');
   const jsonStr = txt.substring(start + 1, end);
@@ -30,7 +51,6 @@ async function fetchSheetJson(sheetId, gid = 0) {
 
 /**
  * Mapeia colunas da planilha para um objeto de produto.
- * ATUALIZADO: Lê 'f' (valor formatado) para dataOferta
  */
 function mapRowToProduct(row, headers) {
   const obj = {
@@ -55,28 +75,20 @@ function mapRowToProduct(row, headers) {
     }
     else if (header.match(/categoria|category/)) obj.categoria = val.toString().toLowerCase();
     else if (header.match(/genero|gênero|genêro|sex|sexo/)) obj.genero = val.toString().toLowerCase();
-    else if (header.match(/tipo|type/)) obj.estilo = val.toString().toLowerCase(); // 'estilo' para não conflitar com 'tipo' interno
-    else if (header.match(/destaque/)) obj.destaque = val; // Mantém Destaque
-    else if (header.match(/descricao|descri[cç][aã]o/)) obj.descricao = val; // NOVO: Descricao
-    
-    // ***** INÍCIO DA CORREÇÃO 1 *****
+    else if (header.match(/tipo|type/)) obj.estilo = val.toString().toLowerCase(); 
+    else if (header.match(/destaque/)) obj.destaque = val;
+    else if (header.match(/descricao|descri[cç][aã]o/)) obj.descricao = val;
     else if (header.match(/dataoferta/)) {
-      // CORREÇÃO: Usar o valor formatado (f) para datas, não o valor (v).
-      // 'f' vem como "30/10/2025" ou "30/10/25" (string correta)
-      // 'v' vem como "Date(2025,9,30)" (string que causa o erro)
       if (cell && cell.f) {
         obj.dataOferta = cell.f; 
       } else if (val && val.toString().includes('/')) {
-        // Fallback para opensheet.elk.sh, que só tem 'v' mas 'v' já é a string "30/10/25"
         obj.dataOferta = val.toString();
       } else {
-        obj.dataOferta = ""; // Deixa em branco se não for um formato válido
+        obj.dataOferta = "";
       }
     }
-    // ***** FIM DA CORREÇÃO 1 *****
-
-    else if (header.match(/horaoferta/)) obj.horaOferta = val; // NOVO: HoraOferta
-    else if (header.match(/^img\d?$|^imagem\d?$|^foto\d?$/)) { // Pega Img, Img1, Img2...
+    else if (header.match(/horaoferta/)) obj.horaOferta = val;
+    else if (header.match(/^img\d?$|^imagem\d?$|^foto\d?$/)) { 
       if (val) obj.images.push(val.toString());
     }
   });
@@ -86,15 +98,12 @@ function mapRowToProduct(row, headers) {
   obj.preco = obj.preco !== undefined ? obj.preco : 0;
   obj.categoria = obj.categoria || "";
   obj.genero = obj.genero || "";
-  obj.id = obj.id || `${Date.now()}-${Math.random()}`; // Gera ID se não houver
+  // REQ 2/3: Garante que ID seja uma string
+  obj.id = (obj.id || `${Date.now()}-${Math.random()}`).toString(); 
 
-  // Define o 'tipo' interno (para filtros) com base na 'categoria'
   obj.tipo = obj.categoria;
-  
-  // Define se é oferta (com base no Destaque ou se tem data de oferta)
   obj.oferta = (obj.destaque && obj.destaque !== "") || (obj.dataOferta && obj.dataOferta !== "");
 
-  // Fallback de imagens
   if (obj.images.length === 0) {
     obj.images.push("https://via.placeholder.com/800x800?text=Sem+Imagem");
   }
@@ -110,6 +119,10 @@ function parseGvizResponse(resp) {
   const cols = resp.table.cols.map(c => c.label || c.id || "");
   const rows = resp.table.rows || [];
   const produtos = rows.map(r => mapRowToProduct(r.c, cols));
+  
+  // REQ 2/3: Popula o mapa global de produtos
+  produtos.forEach(p => allProducts.set(p.id, p));
+  
   return produtos;
 }
 
@@ -132,32 +145,29 @@ function popularSelectComCategorias(produtos, selectElement, tipoFilter) {
 }
 
 /**
- * NOVO: Renderiza o card de produto com múltiplas imagens e link de detalhe
+ * Renderiza o card de produto
  */
 function criarCardHTML(p) {
   const placeholder = "https://via.placeholder.com/800x800?text=Sem+Imagem";
   const images = p.images && p.images.length ? p.images : [placeholder];
   const mainImg = images[0];
   
-  // Pega até 3 imagens para miniaturas (da 2ª até a 4ª)
-  const thumbnails = images.slice(1, 4); 
+  // REQ 1: Pega até 4 imagens para miniaturas (0, 1, 2, 3)
+  const thumbnails = images.slice(0, 4); 
   const thumbsHTML = thumbnails
     .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`)
     .join('');
 
-  // Formata preço
   const precoFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.preco || 0);
-
-  // Link para a página de detalhes, passando dados via URL
-  // Usamos JSON stringify + encodeURIComponent para passar o objeto
   const linkDetalhe = `detalhe.html?data=${encodeURIComponent(JSON.stringify(p))}`;
-  
-  // Badge de Destaque (ex: "Oferta")
   const badgeHTML = p.destaque ? `<div class="card-badge">${escapeHtml(p.destaque)}</div>` : '';
-
-  // Placeholder do Timer
-  // O ID é crucial para o script de contagem regressiva encontrar este elemento
   const timerHTML = p.dataOferta ? `<div class="card-timer" id="timer-${p.id}"></div>` : '';
+
+  // REQ 2/3: Verifica status do carrinho para o botão
+  const cart = getCart();
+  const isInCart = cart.find(item => item.id === p.id);
+  const btnText = isInCart ? '✅ Já no carrinho' : 'Adicionar ao Carrinho';
+  const btnDisabled = isInCart ? 'disabled' : '';
 
   const template = document.createElement('div');
   template.className = "card";
@@ -178,9 +188,9 @@ function criarCardHTML(p) {
     <h3>${escapeHtml(p.nome)}</h3>
     <p>${precoFmt}</p>
     
-    <label class="checkbox">
-      <input type="checkbox" data-nome="${escapeHtml(p.nome)}" data-preco="${p.preco}"> Selecionar
-    </label>
+    <button class="btn-add-cart" data-id="${escapeHtml(p.id)}" ${btnDisabled}>
+      ${btnText}
+    </button>
   `;
   return template;
 }
@@ -210,9 +220,6 @@ function mostrarMensagemNoContainer(container, msg){
   container.appendChild(div);
 }
 
-/**
- * NOVO: Limpa timers antigos antes de renderizar novos cards
- */
 function clearTimers(containerId) {
   if (activeTimers[containerId]) {
     activeTimers[containerId].forEach(intervalId => clearInterval(intervalId));
@@ -220,70 +227,55 @@ function clearTimers(containerId) {
   activeTimers[containerId] = []; // Limpa o array
 }
 
-/**
- * NOVO: Inicia todos os contadores para os produtos renderizados
- * ATUALIZADO: Trata ano com 2 (AA) ou 4 (YYYY) dígitos
- */
 function iniciarContadores(produtos, containerId) {
   produtos.forEach(p => {
-    if (!p.dataOferta) return; // Pula se não tem data
+    if (!p.dataOferta) return; 
 
     const timerEl = document.getElementById(`timer-${p.id}`);
-    if (!timerEl) return; // Pula se elemento não foi encontrado
+    if (!timerEl) return; 
 
-    // 1. Parse da Data (DD/MM/AA ou DD/MM/YYYY)
-    // ***** INÍCIO DA CORREÇÃO 2 *****
     const [dia, mes, anoStr] = p.dataOferta.split('/');
     if (!dia || !mes || !anoStr) {
       console.warn(`Data de oferta inválida para ${p.nome}: ${p.dataOferta}`);
       return;
     }
 
-    // 2. Parse da Hora (0-23)
-    const hora = p.horaOferta ? parseInt(p.horaOferta, 10) : 23; // Default 23h
-    const minutos = p.horaOferta ? 0 : 59; // Default 59min
-    const segundos = p.horaOferta ? 0 : 59; // Default 59s
+    const hora = p.horaOferta ? parseInt(p.horaOferta, 10) : 23; 
+    const minutos = p.horaOferta ? 0 : 59; 
+    const segundos = p.horaOferta ? 0 : 59; 
     
-    // 3. Cria a data alvo (Ano 'AA' vira '20AA')
-    // CORREÇÃO: Tratar ano com 2 ou 4 dígitos
     let anoNum = parseInt(anoStr, 10);
     if (anoStr.length === 2) {
       anoNum += 2000; // Converte '25' para '2025'
     }
     
     const targetDate = new Date(anoNum, mes - 1, dia, hora, minutos, segundos);
-    // ***** FIM DA CORREÇÃO 2 *****
-
-    // 4. Cria o intervalo de atualização
+    
     const intervalId = setInterval(() => {
       const agora = new Date().getTime();
       const diff = targetDate.getTime() - agora;
 
       if (diff <= 0) {
         clearInterval(intervalId);
-        timerEl.style.display = 'none'; // Esconde timer
+        timerEl.style.display = 'none'; 
         return;
       }
 
-      // 5. Calcula tempo restante
       const d = Math.floor(diff / (1000 * 60 * 60 * 24));
       const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-      // 6. Atualiza o HTML do timer
       timerEl.innerHTML = `${d}d ${h}h ${m}m ${s}s`;
 
     }, 1000);
-
-    // 7. Armazena o ID do intervalo para limpeza futura
+    
     activeTimers[containerId].push(intervalId);
   });
 }
 
 
 function criarCardsEAdicionar(container, produtos){
-  // NOVO: Limpa timers antigos associados a este container
   clearTimers(container.id);
   
   vazioElemento(container);
@@ -297,7 +289,6 @@ function criarCardsEAdicionar(container, produtos){
     container.appendChild(card);
   });
   
-  // NOVO: Inicia os contadores para os produtos recém-adicionados
   iniciarContadores(produtos, container.id);
 }
 
@@ -305,7 +296,6 @@ function filtrarLista(produtos, { genero = '', categoria = '', precoMin = 0, pre
   return produtos.filter(p => {
     if(tipo && p.tipo !== tipo) return false;
     if(genero && String(p.genero || '').toLowerCase() !== String(genero || '').toLowerCase()) return false;
-    // Filtro de categoria agora usa o 'estilo' (coluna 'Tipo' da planilha)
     if(categoria && String(p.estilo || '').toLowerCase() !== String(categoria || '').toLowerCase()) return false;
     const preco = Number(p.preco || 0);
     if(!isNaN(precoMin) && preco < precoMin) return false;
@@ -315,15 +305,13 @@ function filtrarLista(produtos, { genero = '', categoria = '', precoMin = 0, pre
 }
 
 /**
- * NOVO: Adiciona handler de clique para miniaturas (delegação de evento)
+ * Adiciona handler de clique para miniaturas (delegação de evento)
  */
 function adicionarClickHandlerMiniaturas(container) {
   container.addEventListener('click', (e) => {
-    // Verifica se o clique foi em uma miniatura
     if (e.target.classList.contains('card-thumb')) {
-      e.preventDefault(); // Previne qualquer ação padrão
+      e.preventDefault(); 
       
-      // Encontra a imagem principal do card pai
       const card = e.target.closest('.card');
       if (card) {
         const mainImg = card.querySelector('.card-img-main-pic');
@@ -333,6 +321,38 @@ function adicionarClickHandlerMiniaturas(container) {
       }
     }
   });
+}
+
+/**
+ * REQ 2/3: Handler para cliques no botão "Adicionar ao Carrinho"
+ */
+function handleAddToCartClick(e) {
+  if (!e.target.classList.contains('btn-add-cart')) return;
+  
+  const btn = e.target;
+  const productId = btn.dataset.id;
+  const product = allProducts.get(productId);
+  
+  if (!product) {
+    console.error("Produto não encontrado no mapa:", productId);
+    return;
+  }
+
+  const cart = getCart();
+  
+  // Verifica se já está no carrinho (segurança, embora o botão deva estar desabilitado)
+  if (cart.find(p => p.id === product.id)) {
+    return;
+  }
+  
+  // Adiciona item, salva carrinho, atualiza botão do footer
+  cart.push({ id: product.id, nome: product.nome, preco: product.preco });
+  saveCart(cart);
+  updateCartButtonText();
+  
+  // Atualiza botão do card
+  btn.textContent = '✅ Adicionado!';
+  btn.disabled = true;
 }
 
 
@@ -362,17 +382,18 @@ async function loadAndRender(){
   }catch(err){
     console.warn('Falha ao carregar via gviz, tentando fallback opensheet:', err);
     try{
-      const opensheetUrl = `https://opensheet.elk.sh/${SHEET_ID}/Página1`; // Ajuste o nome da aba se necessário
+      const opensheetUrl = `https://opensheet.elk.sh/${SHEET_ID}/Página1`; 
       const r = await fetch(opensheetUrl);
       if (!r.ok) throw new Error(`OpenSheet falhou com status ${r.status}`);
       const arr = await r.json();
       
       produtos = arr.map(obj => {
         const headers = Object.keys(obj);
-        // Converte o objeto {chave: valor} para o formato [{v: valor}, {v: valor}]
         const row = headers.map(h => ({ v: obj[h] }));
         return mapRowToProduct(row, headers);
       });
+      // REQ 2/3: Popula o mapa global também no fallback
+      produtos.forEach(p => allProducts.set(p.id, p));
       console.log('Dados carregados (opensheet):', produtos.length, 'produtos');
     }catch(err2){
       console.error('Erro ao carregar planilha pelo fallback:', err2);
@@ -390,7 +411,10 @@ async function loadAndRender(){
   // initial render
   criarCardsEAdicionar(listaRelogiosEl, filtrarLista(produtos, { tipo: 'relogio' }));
   criarCardsEAdicionar(listaAcessoriosEl, filtrarLista(produtos, { tipo: 'acessorio' }));
-  criarCardsEAdicionar(listaOfertasEl, produtos.filter(p => p.oferta)); // Mostra todos com 'destaque' ou 'dataoferta'
+  criarCardsEAdicionar(listaOfertasEl, produtos.filter(p => p.oferta));
+  
+  // REQ 2/3: Atualiza o texto do botão do carrinho no carregamento inicial
+  updateCartButtonText();
 
   // filter handlers
   btnFiltrarRelogio.addEventListener('click', () => {
@@ -411,29 +435,44 @@ async function loadAndRender(){
     criarCardsEAdicionar(listaAcessoriosEl, result);
   });
   
-  // NOVO: Adiciona listeners de clique para miniaturas em todos os containers
+  // Adiciona listeners de clique (miniatura e carrinho)
   [listaRelogiosEl, listaAcessoriosEl, listaOfertasEl].forEach(container => {
     adicionarClickHandlerMiniaturas(container);
+    // REQ 2/3: Adiciona listener para "Adicionar ao Carrinho"
+    container.addEventListener('click', handleAddToCartClick);
   });
 
 
-  // WhatsApp button
+  // REQ 2/3: Botão WhatsApp atualizado para enviar o carrinho
   const btnWhats = document.getElementById('enviarWhatsApp');
   btnWhats.addEventListener('click', () => {
-    const checked = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
-    if(checked.length === 0){
-      alert('Nenhum produto selecionado.');
+    
+    const cart = getCart();
+    if (cart.length === 0){
+      alert('Seu carrinho está vazio.');
       return;
     }
-    const lines = checked.map(ch => {
-      const nome = ch.dataset.nome || '';
-      const preco = ch.dataset.preco ? Number(ch.dataset.preco) : 0;
-      const precoFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(preco);
-      return `${nome} - ${precoFmt}`;
+    
+    const lines = cart.map(p => {
+      const precoFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.preco);
+      return `${p.nome} - ${precoFmt}`;
     });
-    const msg = `Olá! Gostaria de comprar:\n${lines.join('\n')}`;
+    
+    const msg = `Olá! Gostaria de comprar os seguintes itens:\n${lines.join('\n')}`;
     const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
     window.open(wa, '_blank');
+    
+    // REQ 3: Pergunta se quer limpar o carrinho após enviar
+    if (confirm("Pedido enviado! Deseja limpar o carrinho?")) {
+      saveCart([]); // Limpa o carrinho
+      updateCartButtonText(); // Atualiza o botão do footer
+      
+      // Reseta todos os botões "Adicionado" dos cards
+      document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => {
+        btn.textContent = 'Adicionar ao Carrinho';
+        btn.disabled = false;
+      });
+    }
   });
 }
 
