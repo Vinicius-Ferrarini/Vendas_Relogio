@@ -6,17 +6,16 @@ const GID = 0;
 const WHATSAPP_NUMBER = "5543999705837";
 // ======================
 
-// Objeto para armazenar os intervalos dos timers ativos e limpá-los
 let activeTimers = {
   listaRelogios: [],
   listaAcessorios: [],
   listaOfertas: []
 };
-
-// REQ 2/3: Mapa global para fácil acesso aos dados do produto pelo ID
 let allProducts = new Map();
 
-// REQ 2/3: Funções de utilidade do Carrinho
+// ===================================
+// FUNÇÕES DO CARRINHO (LocalStorage)
+// ===================================
 function getCart() {
   return JSON.parse(localStorage.getItem('leandrinhoCart') || '[]');
 }
@@ -36,9 +35,109 @@ function updateCartButtonText() {
   }
 }
 
-/**
- * Faz fetch no endpoint gviz do Google Sheet (formato JSONP) e retorna JSON puro.
- */
+// ===================================
+// FUNÇÕES DO MODAL DO CARRINHO
+// ===================================
+function formatPrice(price) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price || 0);
+}
+
+function abrirModalCarrinho() {
+  const cart = getCart();
+  const modal = document.getElementById('modalCarrinho');
+  const modalBody = document.getElementById('listaCarrinhoModal');
+  const totalEl = document.getElementById('totalCarrinhoModal');
+  const enviarBtn = document.getElementById('enviarPedidoModal');
+  
+  vazioElemento(modalBody); // Limpa a lista antiga
+  
+  if (cart.length === 0) {
+    modalBody.innerHTML = '<p>Seu carrinho está vazio.</p>';
+    totalEl.textContent = 'Total: R$ 0,00';
+    enviarBtn.style.display = 'none'; // Oculta o botão de enviar
+  } else {
+    let total = 0;
+    
+    cart.forEach(item => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'cart-item-modal';
+      
+      itemEl.innerHTML = `
+        <div class="cart-item-modal-info">
+          <span class="nome">${escapeHtml(item.nome)}</span>
+          <span class="preco">${formatPrice(item.preco)}</span>
+        </div>
+        <button class="remover-item-btn" data-id="${escapeHtml(item.id)}">Remover</button>
+      `;
+      modalBody.appendChild(itemEl);
+      total += item.preco;
+    });
+    
+    totalEl.textContent = `Total: ${formatPrice(total)}`;
+    enviarBtn.style.display = 'block'; // Mostra o botão de enviar
+  }
+  
+  modal.style.display = 'flex'; // Mostra o modal
+}
+
+function fecharModalCarrinho() {
+  const modal = document.getElementById('modalCarrinho');
+  modal.style.display = 'none';
+}
+
+function handleRemoverItem(productId) {
+  let cart = getCart();
+  cart = cart.filter(item => item.id.toString() !== productId.toString());
+  saveCart(cart);
+  
+  // Re-renderiza o modal para atualizar a lista e o total
+  abrirModalCarrinho();
+  
+  // Atualiza o botão principal do footer
+  updateCartButtonText();
+  
+  // Re-abilita o botão "Adicionar" no card do produto na página
+  const cardBtn = document.querySelector(`.btn-add-cart[data-id="${productId}"]`);
+  if (cardBtn) {
+    cardBtn.textContent = 'Adicionar ao Carrinho';
+    cardBtn.disabled = false;
+  }
+}
+
+function handleEnviarPedido() {
+  const cart = getCart();
+  if (cart.length === 0){
+    alert('Seu carrinho está vazio.');
+    return;
+  }
+  
+  const lines = cart.map(p => {
+    return `${p.nome} - ${formatPrice(p.preco)}`;
+  });
+  
+  const msg = `Olá! Gostaria de comprar os seguintes itens:\n${lines.join('\n')}`;
+  const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  window.open(wa, '_blank');
+  
+  // Pergunta se quer limpar o carrinho após enviar
+  if (confirm("Pedido enviado! Deseja limpar o carrinho?")) {
+    saveCart([]); // Limpa o carrinho
+    updateCartButtonText(); // Atualiza o botão do footer
+    
+    // Reseta todos os botões "Adicionado" dos cards
+    document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => {
+      btn.textContent = 'Adicionar ao Carrinho';
+      btn.disabled = false;
+    });
+    
+    fecharModalCarrinho(); // Fecha o modal
+  }
+}
+
+// ===================================
+// LÓGICA DE CARREGAMENTO DA PLANILHA
+// ===================================
+
 async function fetchSheetJson(sheetId, gid = 0) {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
   const res = await fetch(url);
@@ -49,20 +148,14 @@ async function fetchSheetJson(sheetId, gid = 0) {
   return JSON.parse(jsonStr);
 }
 
-/**
- * Mapeia colunas da planilha para um objeto de produto.
- */
 function mapRowToProduct(row, headers) {
-  const obj = {
-    images: [] // Inicializa array de imagens
-  };
+  const obj = { images: [] };
   
   headers.forEach((h, i) => {
-    const cell = row[i]; // O objeto da célula, ex: {v: "Date(...)", f: "30/10/2025"}
-    const val = cell && cell.v !== undefined ? cell.v : ""; // O valor 'v'
+    const cell = row[i];
+    const val = cell && cell.v !== undefined ? cell.v : "";
     const header = (h || "").toString().trim().toLowerCase();
 
-    // Mapeamento de campos
     if (header.match(/^id$/)) obj.id = val;
     else if (header.match(/nome|name|produto/)) obj.nome = val;
     else if (header.match(/pre[cç]o|price|valor/)) {
@@ -79,13 +172,9 @@ function mapRowToProduct(row, headers) {
     else if (header.match(/destaque/)) obj.destaque = val;
     else if (header.match(/descricao|descri[cç][aã]o/)) obj.descricao = val;
     else if (header.match(/dataoferta/)) {
-      if (cell && cell.f) {
-        obj.dataOferta = cell.f; 
-      } else if (val && val.toString().includes('/')) {
-        obj.dataOferta = val.toString();
-      } else {
-        obj.dataOferta = "";
-      }
+      if (cell && cell.f) obj.dataOferta = cell.f; 
+      else if (val && val.toString().includes('/')) obj.dataOferta = val.toString();
+      else obj.dataOferta = "";
     }
     else if (header.match(/horaoferta/)) obj.horaOferta = val;
     else if (header.match(/^img\d?$|^imagem\d?$|^foto\d?$/)) { 
@@ -93,42 +182,29 @@ function mapRowToProduct(row, headers) {
     }
   });
 
-  // --- Lógica de Normalização ---
+  // Normalização
   obj.nome = obj.nome || "";
   obj.preco = obj.preco !== undefined ? obj.preco : 0;
   obj.categoria = obj.categoria || "";
   obj.genero = obj.genero || "";
-  // REQ 2/3: Garante que ID seja uma string
   obj.id = (obj.id || `${Date.now()}-${Math.random()}`).toString(); 
-
   obj.tipo = obj.categoria;
   obj.oferta = (obj.destaque && obj.destaque !== "") || (obj.dataOferta && obj.dataOferta !== "");
-
   if (obj.images.length === 0) {
     obj.images.push("https://via.placeholder.com/800x800?text=Sem+Imagem");
   }
-
   return obj;
 }
 
-
-/**
- * Faz parsing da response do gviz: extrai headers e rows
- */
 function parseGvizResponse(resp) {
   const cols = resp.table.cols.map(c => c.label || c.id || "");
   const rows = resp.table.rows || [];
   const produtos = rows.map(r => mapRowToProduct(r.c, cols));
   
-  // REQ 2/3: Popula o mapa global de produtos
   produtos.forEach(p => allProducts.set(p.id, p));
-  
   return produtos;
 }
 
-/**
- * Util: remove duplicados em categorias e cria options
- */
 function popularSelectComCategorias(produtos, selectElement, tipoFilter) {
   const set = new Set();
   produtos.forEach(p => {
@@ -144,28 +220,27 @@ function popularSelectComCategorias(produtos, selectElement, tipoFilter) {
   });
 }
 
-/**
- * Renderiza o card de produto
- */
+// ===================================
+// RENDERIZAÇÃO DE CARDS E TIMERS
+// ===================================
+
 function criarCardHTML(p) {
   const placeholder = "https://via.placeholder.com/800x800?text=Sem+Imagem";
   const images = p.images && p.images.length ? p.images : [placeholder];
   const mainImg = images[0];
   
-  // REQ 1: Pega até 4 imagens para miniaturas (0, 1, 2, 3)
   const thumbnails = images.slice(0, 4); 
   const thumbsHTML = thumbnails
     .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`)
     .join('');
 
-  const precoFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.preco || 0);
+  const precoFmt = formatPrice(p.preco);
   const linkDetalhe = `detalhe.html?data=${encodeURIComponent(JSON.stringify(p))}`;
   const badgeHTML = p.destaque ? `<div class="card-badge">${escapeHtml(p.destaque)}</div>` : '';
   const timerHTML = p.dataOferta ? `<div class="card-timer" id="timer-${p.id}"></div>` : '';
 
-  // REQ 2/3: Verifica status do carrinho para o botão
   const cart = getCart();
-  const isInCart = cart.find(item => item.id === p.id);
+  const isInCart = cart.find(item => item.id.toString() === p.id.toString());
   const btnText = isInCart ? '✅ Já no carrinho' : 'Adicionar ao Carrinho';
   const btnDisabled = isInCart ? 'disabled' : '';
 
@@ -174,20 +249,14 @@ function criarCardHTML(p) {
   template.innerHTML = `
     ${badgeHTML}
     ${timerHTML}
-    
     <div class="card-img-main">
       <a href="${linkDetalhe}">
         <img src="${escapeHtml(mainImg)}" alt="${escapeHtml(p.nome)}" loading="lazy" class="card-img-main-pic">
       </a>
     </div>
-    
-    <div class="card-img-thumbs">
-      ${thumbsHTML}
-    </div>
-    
+    <div class="card-img-thumbs">${thumbsHTML}</div>
     <h3>${escapeHtml(p.nome)}</h3>
     <p>${precoFmt}</p>
-    
     <button class="btn-add-cart" data-id="${escapeHtml(p.id)}" ${btnDisabled}>
       ${btnText}
     </button>
@@ -197,15 +266,9 @@ function criarCardHTML(p) {
 
 function escapeHtml(str){
   if(!str && str !== 0) return "";
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
-/** Render and UI wiring **/
 function vazioElemento(el){
   while(el.firstChild) el.removeChild(el.firstChild);
 }
@@ -224,13 +287,12 @@ function clearTimers(containerId) {
   if (activeTimers[containerId]) {
     activeTimers[containerId].forEach(intervalId => clearInterval(intervalId));
   }
-  activeTimers[containerId] = []; // Limpa o array
+  activeTimers[containerId] = [];
 }
 
 function iniciarContadores(produtos, containerId) {
   produtos.forEach(p => {
     if (!p.dataOferta) return; 
-
     const timerEl = document.getElementById(`timer-${p.id}`);
     if (!timerEl) return; 
 
@@ -245,9 +307,7 @@ function iniciarContadores(produtos, containerId) {
     const segundos = p.horaOferta ? 0 : 59; 
     
     let anoNum = parseInt(anoStr, 10);
-    if (anoStr.length === 2) {
-      anoNum += 2000; // Converte '25' para '2025'
-    }
+    if (anoStr.length === 2) anoNum += 2000;
     
     const targetDate = new Date(anoNum, mes - 1, dia, hora, minutos, segundos);
     
@@ -260,35 +320,27 @@ function iniciarContadores(produtos, containerId) {
         timerEl.style.display = 'none'; 
         return;
       }
-
       const d = Math.floor(diff / (1000 * 60 * 60 * 24));
       const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
-
       timerEl.innerHTML = `${d}d ${h}h ${m}m ${s}s`;
-
     }, 1000);
-    
     activeTimers[containerId].push(intervalId);
   });
 }
 
-
 function criarCardsEAdicionar(container, produtos){
   clearTimers(container.id);
-  
   vazioElemento(container);
   if(!produtos || produtos.length === 0){
     mostrarMensagemNoContainer(container, 'Nenhum produto encontrado.');
     return;
   }
-
   produtos.forEach(p => {
     const card = criarCardHTML(p);
     container.appendChild(card);
   });
-  
   iniciarContadores(produtos, container.id);
 }
 
@@ -304,28 +356,19 @@ function filtrarLista(produtos, { genero = '', categoria = '', precoMin = 0, pre
   });
 }
 
-/**
- * Adiciona handler de clique para miniaturas (delegação de evento)
- */
 function adicionarClickHandlerMiniaturas(container) {
   container.addEventListener('click', (e) => {
     if (e.target.classList.contains('card-thumb')) {
       e.preventDefault(); 
-      
       const card = e.target.closest('.card');
       if (card) {
         const mainImg = card.querySelector('.card-img-main-pic');
-        if (mainImg) {
-          mainImg.src = e.target.src; // Troca a imagem
-        }
+        if (mainImg) mainImg.src = e.target.src;
       }
     }
   });
 }
 
-/**
- * REQ 2/3: Handler para cliques no botão "Adicionar ao Carrinho"
- */
 function handleAddToCartClick(e) {
   if (!e.target.classList.contains('btn-add-cart')) return;
   
@@ -333,28 +376,22 @@ function handleAddToCartClick(e) {
   const productId = btn.dataset.id;
   const product = allProducts.get(productId);
   
-  if (!product) {
-    console.error("Produto não encontrado no mapa:", productId);
-    return;
-  }
+  if (!product) return;
 
   const cart = getCart();
+  if (cart.find(p => p.id === product.id)) return;
   
-  // Verifica se já está no carrinho (segurança, embora o botão deva estar desabilitado)
-  if (cart.find(p => p.id === product.id)) {
-    return;
-  }
-  
-  // Adiciona item, salva carrinho, atualiza botão do footer
   cart.push({ id: product.id, nome: product.nome, preco: product.preco });
   saveCart(cart);
   updateCartButtonText();
   
-  // Atualiza botão do card
   btn.textContent = '✅ Adicionado!';
   btn.disabled = true;
 }
 
+// ===================================
+// FUNÇÃO PRINCIPAL (INICIALIZAÇÃO)
+// ===================================
 
 async function loadAndRender(){
   const listaRelogiosEl = document.getElementById('listaRelogios');
@@ -392,31 +429,28 @@ async function loadAndRender(){
         const row = headers.map(h => ({ v: obj[h] }));
         return mapRowToProduct(row, headers);
       });
-      // REQ 2/3: Popula o mapa global também no fallback
       produtos.forEach(p => allProducts.set(p.id, p));
       console.log('Dados carregados (opensheet):', produtos.length, 'produtos');
     }catch(err2){
       console.error('Erro ao carregar planilha pelo fallback:', err2);
-      mostrarMensagemNoContainer(listaRelogiosEl, 'Erro ao carregar produtos. Verifique o console.');
-      mostrarMensagemNoContainer(listaAcessoriosEl, 'Erro ao carregar produtos. Verifique o console.');
-      mostrarMensagemNoContainer(listaOfertasEl, 'Erro ao carregar produtos. Verifique o console.');
+      [listaRelogiosEl, listaAcessoriosEl, listaOfertasEl].forEach(el => 
+        mostrarMensagemNoContainer(el, 'Erro ao carregar produtos. Verifique o console.')
+      );
       return;
     }
   }
 
-  // Populate category selects
+  // Popular selects e renderizar cards
   popularSelectComCategorias(produtos, filtroCategoriaRelogio, 'relogio');
   popularSelectComCategorias(produtos, filtroCategoriaAcessorio, 'acessorio');
 
-  // initial render
   criarCardsEAdicionar(listaRelogiosEl, filtrarLista(produtos, { tipo: 'relogio' }));
   criarCardsEAdicionar(listaAcessoriosEl, filtrarLista(produtos, { tipo: 'acessorio' }));
   criarCardsEAdicionar(listaOfertasEl, produtos.filter(p => p.oferta));
   
-  // REQ 2/3: Atualiza o texto do botão do carrinho no carregamento inicial
   updateCartButtonText();
 
-  // filter handlers
+  // Handlers de Filtro
   btnFiltrarRelogio.addEventListener('click', () => {
     const genero = filtroGeneroRelogio.value;
     const categoria = filtroCategoriaRelogio.value;
@@ -435,48 +469,50 @@ async function loadAndRender(){
     criarCardsEAdicionar(listaAcessoriosEl, result);
   });
   
-  // Adiciona listeners de clique (miniatura e carrinho)
+  // Handlers de Clique nos Cards (Miniaturas e "Adicionar")
   [listaRelogiosEl, listaAcessoriosEl, listaOfertasEl].forEach(container => {
     adicionarClickHandlerMiniaturas(container);
-    // REQ 2/3: Adiciona listener para "Adicionar ao Carrinho"
     container.addEventListener('click', handleAddToCartClick);
   });
 
-
-  // REQ 2/3: Botão WhatsApp atualizado para enviar o carrinho
+  // ===========================================
+  // LISTENERS DO MODAL E BOTÃO PRINCIPAL
+  // ===========================================
+  
+  // Botão principal (footer) agora abre o modal
   const btnWhats = document.getElementById('enviarWhatsApp');
   btnWhats.addEventListener('click', () => {
-    
-    const cart = getCart();
-    if (cart.length === 0){
+    // Se o carrinho estiver vazio, não faz nada (ou mostra alerta)
+    if (getCart().length === 0) {
       alert('Seu carrinho está vazio.');
       return;
     }
-    
-    const lines = cart.map(p => {
-      const precoFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.preco);
-      return `${p.nome} - ${precoFmt}`;
-    });
-    
-    const msg = `Olá! Gostaria de comprar os seguintes itens:\n${lines.join('\n')}`;
-    const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-    window.open(wa, '_blank');
-    
-    // REQ 3: Pergunta se quer limpar o carrinho após enviar
-    if (confirm("Pedido enviado! Deseja limpar o carrinho?")) {
-      saveCart([]); // Limpa o carrinho
-      updateCartButtonText(); // Atualiza o botão do footer
-      
-      // Reseta todos os botões "Adicionado" dos cards
-      document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => {
-        btn.textContent = 'Adicionar ao Carrinho';
-        btn.disabled = false;
-      });
+    abrirModalCarrinho();
+  });
+  
+  // Botão "X" para fechar
+  document.getElementById('fecharModal').addEventListener('click', fecharModalCarrinho);
+  
+  // Clicar fora do modal (no overlay) para fechar
+  document.getElementById('modalCarrinho').addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+      fecharModalCarrinho();
     }
   });
+  
+  // Botão "Remover" (dentro do modal)
+  document.getElementById('listaCarrinhoModal').addEventListener('click', (e) => {
+    if (e.target.classList.contains('remover-item-btn')) {
+      const productId = e.target.dataset.id;
+      handleRemoverItem(productId);
+    }
+  });
+  
+  // Botão "Enviar Pedido" (dentro do modal)
+  document.getElementById('enviarPedidoModal').addEventListener('click', handleEnviarPedido);
 }
 
-// initialize on DOM ready
+// Inicializa tudo
 document.addEventListener('DOMContentLoaded', () => {
   loadAndRender().catch(e => console.error('Erro na inicialização:', e));
 });

@@ -54,8 +54,28 @@
     <div class="container" id="listaAcessorios"></div>
   </main>
 
+  <div class="modal-overlay" id="modalCarrinho" style="display: none;">
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <h2>Meu Carrinho</h2>
+        <button class="modal-close-btn" id="fecharModal">&times;</button>
+      </div>
+      
+      <div class="modal-body" id="listaCarrinhoModal">
+        <p>Seu carrinho está vazio.</p>
+      </div>
+      
+      <div class="modal-footer">
+        <h3 id="totalCarrinhoModal">Total: R$ 0,00</h3>
+        <button id="enviarPedidoModal">🟢 Enviar Pedido por WhatsApp</button>
+      </div>
+
+    </div>
+  </div>
+
   <footer>
-    <button id="enviarWhatsApp">🟢 Enviar pelo WhatsApp</button>
+    <button id="enviarWhatsApp">🟢 Carrinho Vazio</button>
   </footer>
 
   <script src="script.js"></script>

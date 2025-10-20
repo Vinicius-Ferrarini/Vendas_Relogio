@@ -1,6 +1,6 @@
 // detalhe.js
 
-// REQ 2/3: Config e funções do carrinho (duplicadas de script.js para independência)
+// REQ 2/3: Config e funções do carrinho
 const WHATSAPP_NUMBER = "5543999705837";
 
 function getCart() {
@@ -37,7 +37,6 @@ function renderizarDetalhes(produto) {
   const images = produto.images && produto.images.length ? produto.images : [placeholder];
   const mainImg = images[0];
   
-  // REQ 1: Pega até 4 imagens para miniaturas (0, 1, 2, 3)
   const thumbnails = images.slice(0, 4); 
   const thumbsHTML = thumbnails
     .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`)
@@ -49,9 +48,8 @@ function renderizarDetalhes(produto) {
   // Formata descrição
   const descricaoHTML = produto.descricao ? escapeHtml(produto.descricao) : 'Nenhuma descrição disponível.';
 
-  // REQ 2/3: Verifica status do carrinho para o botão
+  // Verifica status do carrinho para o botão
   const cart = getCart();
-  // Garante que a comparação de ID seja string-para-string
   const isInCart = cart.find(item => item.id.toString() === produto.id.toString());
   const btnText = isInCart ? '✅ Já no carrinho' : 'Adicionar ao Carrinho';
   const btnDisabled = isInCart ? 'disabled' : '';
@@ -113,8 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Decodifica e faz o parse do JSON
     produto = JSON.parse(decodeURIComponent(dataString));
-    // Garante que o ID do produto seja string
-    produto.id = produto.id.toString();
+    produto.id = produto.id.toString(); // Garante que ID seja string
 
     // 3. Renderiza os detalhes
     renderizarDetalhes(produto);
@@ -122,13 +119,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Atualiza o título da página
     document.title = `${produto.nome || 'Detalhes'} - Leandrinho Relógios`;
     
-    // 5. REQ 2/3: Adiciona listener para o botão "Adicionar ao Carrinho"
+    // 5. Adiciona listener para o botão "Adicionar ao Carrinho"
     const btnAdd = document.getElementById('detalheAddCart');
     if (btnAdd) {
       btnAdd.addEventListener('click', () => {
         const cart = getCart();
         
-        // Segurança: não adiciona se já estiver (botão deve estar desabilitado)
         if (cart.find(item => item.id === produto.id)) return;
 
         cart.push({ id: produto.id, nome: produto.nome, preco: produto.preco });

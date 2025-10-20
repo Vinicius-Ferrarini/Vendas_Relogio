@@ -14,6 +14,26 @@ body{
   background:var(--bg);
   color:#111827;
   -webkit-font-smoothing:antialiased;
+  /* ---- INÍCIO DA MUDANÇA ---- */
+  /* Coloque o link para sua imagem aqui */
+  background-color: burlywood;
+
+  /* Faz a imagem ficar fixa e não rolar com a página */
+  background-attachment: fixed; 
+
+  /* Garante que a imagem cubra toda a tela sem distorcer */
+  background-size: cover; 
+
+  /* Centraliza a imagem */
+  background-position: center center;
+
+  /* Impede que a imagem se repita */
+  background-repeat: no-repeat; 
+  /* ---- FIM DA MUDANÇA ---- */
+
+  color:#111827;
+  -webkit-font-smoothing:antialiased;
+
 }
 
 header{
@@ -88,7 +108,7 @@ button{
 }
 
 /* =================================== */
-/* ATUALIZAÇÃO DO CARD DE PRODUTO      */
+/* CARD DE PRODUTO                     */
 /* =================================== */
 
 .card{
@@ -141,10 +161,9 @@ button{
   height: 45px; /* Altura fixa para miniaturas */
 }
 
-/* REQ 1: Miniaturas ajustadas para caber 4 */
 .card-img-thumbs img {
-  width: 45px; /* Reduzido de 50px */
-  height: 45px; /* Reduzido de 50px */
+  width: 45px; 
+  height: 45px; 
   object-fit: cover;
   border-radius: 6px;
   cursor: pointer;
@@ -156,7 +175,7 @@ button{
   border-color: var(--muted);
 }
 
-/* Badge de Oferta (ajustado) */
+/* Badge de Oferta */
 .card-badge {
   position:absolute;
   right:10px;
@@ -195,7 +214,7 @@ button{
   color:#0f1724;
 }
 
-/* REQ 2/3: Estilo para o botão "Adicionar ao Carrinho" */
+/* Estilo para o botão "Adicionar ao Carrinho" */
 .btn-add-cart {
   margin-top: auto; /* Pushes to bottom of card */
   padding: 10px;
@@ -219,7 +238,7 @@ button{
 
 
 /* =================================== */
-/* ESTILOS DO FOOTER                   */
+/* FOOTER (BOTÃO DO CARRINHO)          */
 /* =================================== */
 
 footer{
@@ -312,7 +331,7 @@ footer{
   margin-bottom: 20px;
 }
 
-/* REQ 2: Botão de adicionar ao carrinho na página de detalhes */
+/* Botão de adicionar ao carrinho na página de detalhes */
 .detalhe-btn-whats {
   width: 100%;
   padding: 14px;
@@ -320,6 +339,129 @@ footer{
   margin-bottom: 20px;
 }
 
+/* =================================== */
+/* ESTILOS DO MODAL DE CARRINHO        */
+/* =================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: none; /* Escondido por padrão */
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 15px;
+}
+
+.modal-content {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.modal-close-btn {
+  font-size: 2.5rem;
+  font-weight: 300;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.modal-close-btn:hover {
+  color: #000;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+/* Estilo para cada item no modal */
+.cart-item-modal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cart-item-modal:last-child {
+  border-bottom: none;
+}
+
+.cart-item-modal-info {
+  flex-grow: 1;
+  margin-right: 15px;
+}
+.cart-item-modal-info span {
+  display: block;
+}
+.cart-item-modal-info .nome {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+.cart-item-modal-info .preco {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.remover-item-btn {
+  background: var(--oferta-bg); /* Vermelho */
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.remover-item-btn:hover {
+  background: #d93737;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #eee;
+  background: #fdfdfd;
+  border-radius: 0 0 12px 12px;
+}
+.modal-footer h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.3rem;
+  text-align: right;
+}
+
+#enviarPedidoModal {
+  width: 100%; /* Botão grande */
+  padding: 14px;
+  font-size: 1.1rem;
+}
 
 /* =================================== */
 /* RESPONSIVIDADE                      */
@@ -330,19 +472,15 @@ footer{
     grid-template-columns: repeat(2, 1fr);
     gap:10px;
   }
-  /* Ajusta altura da imagem principal no mobile */
   .card-img-main {
     height: 140px;
   }
-  .controls{ padding:10px 6px; }
-
-  /* REQ 1: Ajusta miniaturas no mobile para 4 */
   .card-img-thumbs {
     height: 35px;
   }
   .card-img-thumbs img {
-    width: 35px; /* Reduzido de 40px */
-    height: 35px; /* Reduzido de 40px */
+    width: 35px;
+    height: 35px;
   }
   
   .detalhe-container .card-img-thumbs {
