@@ -3,15 +3,23 @@
   --card: #fff;
   --accent: #25d366;
   --muted: #6b7280;
-  --oferta-bg: #ef4444; /* Vermelho para ofertas */
-  --timer-bg: #ffc107; /* Amarelo para timer */
+  --oferta-bg: #ef4444; 
+  --timer-bg: #ffc107; 
+}
+
+/* =================================== */
+/* --- 1. HEADER E NAVEGAÇÃO --- */
+/* =================================== */
+html {
+  /* Habilita o scroll suave para o menu */
+  scroll-behavior: smooth;
 }
 
 *{box-sizing:border-box}
 body{
   margin:0;
   font-family:Inter, "Segoe UI", Arial, sans-serif;
-  background:var(--bg);
+  background-color: burlywood;
   color:#111827;
   -webkit-font-smoothing:antialiased;
 }
@@ -19,7 +27,6 @@ body{
 header{
   background:#0f1724;
   color:#fff;
-  text-align:center;
   padding:1rem;
   font-size:1.25rem;
   font-weight:600;
@@ -29,14 +36,49 @@ header{
   z-index:20;
 }
 
-/* Wrapper para filtros em linha */
-.filters-section-wrapper {
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Para telas pequenas */
   max-width: 1100px;
-  margin: 16px auto -10px auto;
-  padding: 12px;
-  background: var(--card);
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
+  margin: 0 auto;
+}
+
+nav {
+  display: flex;
+  gap: 15px;
+}
+
+nav a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+nav a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* =================================== */
+/* --- 2. FILTROS UNIFICADOS (STICKY) --- */
+/* =================================== */
+.controls{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:center;
+  padding:12px;
+  background:var(--card);
+  box-shadow:0 2px 6px rgba(2,6,23,0.06);
+  position:sticky;
+  /* Gruda abaixo do header (altura do header) */
+  top: 67px; 
+  z-index:15;
 }
 
 .filters-section{
@@ -46,7 +88,7 @@ header{
   flex-wrap:wrap;
   padding:6px;
   border-radius:8px;
-  justify-content: center; /* Centraliza os filtros */
+  justify-content: center; 
 }
 
 .filters-section h3{
@@ -54,8 +96,15 @@ header{
   margin:0 0 6px 0;
   font-size:0.95rem;
   color:var(--muted);
-  text-align: center; /* Centraliza título do filtro */
+  text-align: center; 
 }
+
+/* Container para filtros dinâmicos */
+.filtro-grupo {
+  display: flex;
+  gap: 8px;
+}
+
 
 select, input[type="number"], button{
   padding:8px 10px;
@@ -79,8 +128,24 @@ button{
 }
 
 /* =================================== */
-/* LAYOUT DOS PRODUTOS (FLEXBOX)       */
+/* --- 3. CONTAINERS DAS SEÇÕES (Scroll) --- */
 /* =================================== */
+/* Adiciona padding no topo para o scroll não
+   ficar escondido atrás do header/filtros */
+#secao-ofertas,
+.secao-categoria {
+  /* Altura do header (67px) + altura dos filtros (68px) + espaço (20px) */
+  padding-top: 155px;
+  margin-top: -155px; 
+}
+/* A primeira seção (ofertas) não precisa de padding extra */
+#secao-ofertas {
+  padding-top: 20px;
+  margin-top: 0;
+}
+
+
+/* LAYOUT DOS PRODUTOS (FLEXBOX) */
 .container{
   max-width:1100px;
   margin:0 auto 20px;
@@ -92,10 +157,7 @@ button{
   justify-content: center; 
 }
 
-/* =================================== */
-/* CARD DE PRODUTO                     */
-/* =================================== */
-
+/* CARD DE PRODUTO */
 .card{
   width: 240px; 
   background:var(--card);
@@ -195,37 +257,27 @@ button{
   font-size:1rem;
 }
 
-/* =================================== */
-/* --- ESTILOS DE PREÇO (CORRIGIDO) ---*/
-/* =================================== */
-
-/* Container do preço no Card */
+/* ESTILOS DE PREÇO (Com Oferta) */
 .card .preco-container {
   margin: 0;
   font-weight: 700;
   color: #0f1724;
 }
-
-/* Preço atual (de oferta ou normal) no Card */
 .card .preco-atual {
   font-size: 1.25rem;
-  color: var(--accent); /* Cor de destaque (verde) */
+  color: var(--accent);
 }
-
-/* Preço original (riscado) no Card */
 .card .preco-original {
   font-size: 0.9rem;
   font-weight: 400;
-  color: var(--muted); /* Cinza */
-  text-decoration: line-through; /* Riscado */
+  color: var(--muted); 
+  text-decoration: line-through; 
   margin-right: 5px;
 }
-/* --- FIM DA CORREÇÃO --- */
-
 
 /* Estilo para o botão "Adicionar ao Carrinho" */
 .btn-add-cart {
-  margin-top: auto; /* Pushes to bottom of card */
+  margin-top: auto; 
   padding: 10px;
   border: 0;
   border-radius: 8px;
@@ -237,7 +289,7 @@ button{
   transition: background-color 0.2s ease;
 }
 .btn-add-cart:hover {
-  background: #1da453; /* Darker green */
+  background: #1da453;
 }
 .btn-add-cart:disabled {
   background: var(--muted);
@@ -246,10 +298,7 @@ button{
 }
 
 
-/* =================================== */
-/* FOOTER (BOTÃO DO CARRINHO)          */
-/* =================================== */
-
+/* FOOTER (BOTÃO DO CARRINHO) */
 footer{
   position:sticky;
   bottom:0;
@@ -267,10 +316,7 @@ footer{
   border-radius:10px;
 }
 
-/* =================================== */
-/* PÁGINA DE DETALHES                  */
-/* =================================== */
-
+/* PÁGINA DE DETALHES */
 .detalhe-container {
   max-width: 800px;
   margin: 20px auto;
@@ -298,7 +344,6 @@ footer{
   padding: 40px 0;
 }
 
-/* Imagem principal da página de detalhes */
 #detalhe-img-main {
   width: 100%;
   max-height: 500px;
@@ -307,7 +352,6 @@ footer{
   margin-bottom: 10px;
 }
 
-/* Miniaturas na página de detalhes (reutiliza estilo) */
 .detalhe-container .card-img-thumbs {
   height: 80px; 
   justify-content: flex-start; 
@@ -333,23 +377,15 @@ footer{
   margin: 0 0 10px 0;
 }
 
-/* =================================== */
-/* --- ESTILOS DE PREÇO (CORRIGIDO) ---*/
-/* =================================== */
-
-/* Container do preço nos Detalhes */
+/* ESTILOS DE PREÇO (Detalhes) */
 .detalhe-preco {
   margin-bottom: 20px;
 }
-
-/* Preço atual (de oferta ou normal) nos Detalhes */
 .detalhe-preco .preco-atual {
   font-size: 1.5rem; 
   font-weight: 700;
   color: var(--accent);
 }
-
-/* Preço original (riscado) nos Detalhes */
 .detalhe-preco .preco-original {
   font-size: 1rem;
   font-weight: 400;
@@ -357,9 +393,7 @@ footer{
   text-decoration: line-through;
   margin-right: 8px;
 }
-/* --- FIM DA CORREÇÃO --- */
 
-/* Botão de adicionar ao carrinho na página de detalhes */
 .detalhe-btn-whats {
   width: 100%;
   padding: 14px;
@@ -367,10 +401,7 @@ footer{
   margin-bottom: 20px;
 }
 
-/* =================================== */
-/* ESTILOS DO MODAL DE CARRINHO        */
-/* =================================== */
-
+/* ESTILOS DO MODAL DE CARRINHO */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -378,7 +409,7 @@ footer{
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
-  display: none; /* Escondido por padrão */
+  display: none; 
   align-items: center;
   justify-content: center;
   z-index: 1000;
@@ -429,7 +460,6 @@ footer{
   flex-grow: 1;
 }
 
-/* Estilo para cada item no modal */
 .cart-item-modal {
   display: flex;
   justify-content: space-between;
@@ -460,7 +490,7 @@ footer{
 }
 
 .remover-item-btn {
-  background: var(--oferta-bg); /* Vermelho */
+  background: var(--oferta-bg); 
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -486,18 +516,45 @@ footer{
 }
 
 #enviarPedidoModal {
-  width: 100%; /* Botão grande */
+  width: 100%; 
   padding: 14px;
   font-size: 1.1rem;
 }
 
-/* =================================== */
-/* RESPONSIVIDADE                      */
-/* =================================== */
-
+/* RESPONSIVIDADE */
 @media (max-width:600px){
-  .controls{ padding:10px 6px; }
-
+  /* Ajusta o header no mobile */
+  .header-content {
+    justify-content: center;
+    gap: 10px;
+  }
+  nav {
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap; /* Permite que o menu quebre a linha se tiver muitos itens */
+  }
+  nav a {
+    font-size: 0.9rem;
+    padding: 4px 8px;
+  }
+  
+  /* Ajusta o topo do sticky dos filtros */
+  .controls {
+    /* (Header 67px + Nav 35px) = 102px. Damos uma folga. */
+    top: 102px; 
+  }
+  
+  /* Ajusta o padding do scroll */
+  #secao-ofertas,
+  .secao-categoria {
+    padding-top: 190px;
+    margin-top: -190px;
+  }
+  #secao-ofertas {
+    padding-top: 20px;
+    margin-top: 0;
+  }
+  
   .card-img-thumbs {
     height: 35px;
   }
@@ -521,5 +578,21 @@ footer{
   }
   .detalhe-preco .preco-original {
     font-size: 0.9rem;
+  }
+}
+
+/* Ajuste fino para o sticky top no mobile quando o menu quebra */
+@media (max-width: 420px) {
+  .controls {
+    top: 137px; /* Aumenta o espaço se o menu quebrar em 2 linhas */
+  }
+  #secao-ofertas,
+  .secao-categoria {
+    padding-top: 225px; /* (Header 137px + Filtros 68px) + espaço */
+    margin-top: -225px;
+  }
+  #secao-ofertas {
+    padding-top: 20px;
+    margin-top: 0;
   }
 }

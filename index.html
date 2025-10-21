@@ -7,70 +7,60 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>⏱️ Leandrinho Relógios</header>
+
+  <header>
+    <div class="header-content">
+      <span>⏱️ Leandrinho Relógios</span>
+      <nav id="menuNavegacao"></nav>
+    </div>
+  </header>
+
+  <section class="controls">
+    <div class="filters-section">
+      <h3>Filtros</h3>
+      
+      <select id="filtroCategoria">
+        <option value="">Todas as Categorias</option>
+        </select>
+      
+      <select id="filtroGenero" class="filtro-grupo" style="display: none;">
+        <option value="">Todos os Gêneros</option>
+        </select>
+
+      <select id="filtroTipo" class="filtro-grupo" style="display: none;">
+        <option value="">Todos os Tipos</option>
+        </select>
+      
+      <input type="number" id="precoMin" placeholder="Mín. R$" />
+      <input type="number" id="precoMax" placeholder="Máx. R$" />
+      
+      <button id="filtrarAgora">Aplicar Filtros</button>
+      <button id="limparFiltros" style="background-color: var(--muted);">Limpar</button>
+    </div>
+  </section>
+
 
   <main>
-    <h2 class="titulo-secao">🔥 Ofertas da semana</h2>
-    <div class="container" id="listaOfertas"></div>
-
-    <section class="filters-section-wrapper">
-      <div class="filters-section">
-        <h3>Filtros - Relógios</h3>
-        <select id="filtroGeneroRelogio">
-          <option value="">Todos os gêneros</option>
-          <option value="masculino">Masculino</option>
-          <option value="feminino">Feminino</option>
-        </select>
-        <select id="filtroCategoriaRelogio">
-          <option value="">Todas as categorias</option>
-        </select>
-        <input type="number" id="precoMinRelogio" placeholder="Mín. R$" />
-        <input type="number" id="precoMaxRelogio" placeholder="Máx. R$" />
-        <button id="filtrarRelogio">Aplicar - Relógios</button>
-      </div>
-    </section>
+    <div id="secao-ofertas">
+      <h2 class="titulo-secao">🔥 Ofertas da semana</h2>
+      <div class="container" id="listaOfertas"></div>
+    </div>
     
-    <h2 class="titulo-secao">⌚ Relógios</h2>
-    <div class="container" id="listaRelogios"></div>
-
-    <section class="filters-section-wrapper">
-      <div class="filters-section">
-        <h3>Filtros - Acessórios</h3>
-        <select id="filtroGeneroAcessorio">
-          <option value="">Todos os gêneros</option>
-          <option value="masculino">Masculino</option>
-          <option value="feminino">Feminino</option>
-        </select>
-        <select id="filtroCategoriaAcessorio">
-          <option value="">Todas as categorias</option>
-        </select>
-        <input type="number" id="precoMinAcessorio" placeholder="Mín. R$" />
-        <input type="number" id="precoMaxAcessorio" placeholder="Máx. R$" />
-        <button id="filtrarAcessorio">Aplicar - Acessórios</button>
-      </div>
-    </section>
-
-    <h2 class="titulo-secao">🧩 Acessórios</h2>
-    <div class="container" id="listaAcessorios"></div>
-  </main>
+    </main>
 
   <div class="modal-overlay" id="modalCarrinho" style="display: none;">
     <div class="modal-content">
-      
       <div class="modal-header">
         <h2>Meu Carrinho</h2>
         <button class="modal-close-btn" id="fecharModal">&times;</button>
       </div>
-      
       <div class="modal-body" id="listaCarrinhoModal">
         <p>Seu carrinho está vazio.</p>
       </div>
-      
       <div class="modal-footer">
         <h3 id="totalCarrinhoModal">Total: R$ 0,00</h3>
         <button id="enviarPedidoModal">🟢 Enviar Pedido por WhatsApp</button>
       </div>
-
     </div>
   </div>
 

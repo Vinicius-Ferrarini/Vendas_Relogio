@@ -1,4 +1,4 @@
-// script.js (CORRIGIDO)
+// script.js (COMPLETAMENTE NOVO)
 
 // ======= CONFIG =======
 const SHEET_ID = "1gU34_gLsxTHDy_nxhtg91-Ld6VaU4Zba65dBkZD-2aQ";
@@ -6,15 +6,19 @@ const GID = 0;
 const WHATSAPP_NUMBER = "5543999705837";
 // ======================
 
-let activeTimers = {
-  listaRelogios: [],
-  listaAcessorios: [],
-  listaOfertas: []
-};
+let activeTimers = {};
 let allProducts = new Map();
 
+/**
+ * --- NOVO: Armazenamento de dados dinâmicos ---
+ * Estrutura: Map<string, { tipos: Set<string>, generos: Set<string>, containerId: string, sectionEl: HTMLElement }>
+ * Ex: "relogio" -> { tipos: Set("classico"), generos: Set("masculino"), containerId: "lista-relogio", sectionEl: <div id="secao-relogio">... }
+ */
+let dynamicCategories = new Map();
+
+
 // ===================================
-// FUNÇÕES DO CARRINHO (LocalStorage)
+// FUNÇÕES DO CARRINHO (Sem alterações)
 // ===================================
 function getCart() {
   return JSON.parse(localStorage.getItem('leandrinhoCart') || '[]');
@@ -36,7 +40,7 @@ function updateCartButtonText() {
 }
 
 // ===================================
-// FUNÇÕES DO MODAL DO CARRINHO
+// FUNÇÕES DO MODAL (Sem alterações)
 // ===================================
 function formatPrice(price) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price || 0);
@@ -49,19 +53,17 @@ function abrirModalCarrinho() {
   const totalEl = document.getElementById('totalCarrinhoModal');
   const enviarBtn = document.getElementById('enviarPedidoModal');
   
-  vazioElemento(modalBody); // Limpa a lista antiga
+  vazioElemento(modalBody);
   
   if (cart.length === 0) {
     modalBody.innerHTML = '<p>Seu carrinho está vazio.</p>';
     totalEl.textContent = 'Total: R$ 0,00';
-    enviarBtn.style.display = 'none'; // Oculta o botão de enviar
+    enviarBtn.style.display = 'none';
   } else {
     let total = 0;
-    
     cart.forEach(item => {
       const itemEl = document.createElement('div');
       itemEl.className = 'cart-item-modal';
-      
       itemEl.innerHTML = `
         <div class="cart-item-modal-info">
           <span class="nome">${escapeHtml(item.nome)}</span>
@@ -72,17 +74,14 @@ function abrirModalCarrinho() {
       modalBody.appendChild(itemEl);
       total += item.preco;
     });
-    
     totalEl.textContent = `Total: ${formatPrice(total)}`;
-    enviarBtn.style.display = 'block'; // Mostra o botão de enviar
+    enviarBtn.style.display = 'block';
   }
-  
-  modal.style.display = 'flex'; // Mostra o modal
+  modal.style.display = 'flex';
 }
 
 function fecharModalCarrinho() {
-  const modal = document.getElementById('modalCarrinho');
-  modal.style.display = 'none';
+  document.getElementById('modalCarrinho').style.display = 'none';
 }
 
 function handleRemoverItem(productId) {
@@ -106,11 +105,7 @@ function handleEnviarPedido() {
     alert('Seu carrinho está vazio.');
     return;
   }
-  
-  const lines = cart.map(p => {
-    return `${p.nome} - ${formatPrice(p.preco)}`;
-  });
-  
+  const lines = cart.map(p => `${p.nome} - ${formatPrice(p.preco)}`);
   const msg = `Olá! Gostaria de comprar os seguintes itens:\n${lines.join('\n')}`;
   const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   window.open(wa, '_blank');
@@ -118,12 +113,10 @@ function handleEnviarPedido() {
   if (confirm("Pedido enviado! Deseja limpar o carrinho?")) {
     saveCart([]); 
     updateCartButtonText(); 
-    
     document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => {
       btn.textContent = 'Adicionar ao Carrinho';
       btn.disabled = false;
     });
-    
     fecharModalCarrinho(); 
   }
 }
@@ -143,9 +136,9 @@ async function fetchSheetJson(sheetId, gid = 0) {
 }
 
 /**
- * --- CORRIGIDO ---
+ * --- ATUALIZADO (REQ 1) ---
  * Mapeia colunas da planilha para um objeto de produto.
- * Lógica de PrecoOferta movida para ANTES de Preco.
+ * Agora 'Categoria' é a principal (relogio, fone) e 'Tipo' é a sub-categoria (classico, bluethon)
  */
 function mapRowToProduct(row, headers) {
   const obj = { images: [] };
@@ -157,21 +150,17 @@ function mapRowToProduct(row, headers) {
 
     if (header.match(/^id$/)) obj.id = val;
     else if (header.match(/nome|name|produto/)) obj.nome = val;
-    
-    // --- CORREÇÃO: Lógica de PrecoOferta vem ANTES de Preco ---
     else if (header.match(/pre[cç]o[ \-]?oferta/)) { 
       if (typeof val === "number") {
         obj.precoOferta = val;
       } else {
         const cleaned = String(val).replace(/[R$\s.]/g, "").replace(",", ".");
         const n = parseFloat(cleaned);
-        if (!isNaN(n) && n > 0) { // Só define se for um número válido e maior que 0
+        if (!isNaN(n) && n > 0) { 
           obj.precoOferta = n;
         }
       }
     }
-    
-    // Preço Normal (Agora só vai pegar a coluna "Preco" e não "PrecoOferta")
     else if (header.match(/pre[cç]o|price|valor/)) {
       if (typeof val === "number") obj.preco = val;
       else {
@@ -180,11 +169,13 @@ function mapRowToProduct(row, headers) {
         obj.preco = isNaN(n) ? 0 : n;
       }
     }
-    // --- FIM DA CORREÇÃO ---
-
-    else if (header.match(/categoria|category/)) obj.categoria = val.toString().toLowerCase();
-    else if (header.match(/genero|gênero|genêro|sex|sexo/)) obj.genero = val.toString().toLowerCase();
-    else if (header.match(/tipo|type/)) obj.estilo = val.toString().toLowerCase(); 
+    
+    // --- LÓGICA DE CATEGORIA ATUALIZADA ---
+    else if (header.match(/categoria|category/)) obj.categoria = val.toString().toLowerCase(); // relogio, fone
+    else if (header.match(/tipo|type/)) obj.tipo = val.toString().toLowerCase(); // classico, bluethon
+    // --- FIM DA LÓGICA ---
+    
+    else if (header.match(/genero|gênero|genêro|sex|sexo/)) obj.genero = val.toString().toLowerCase(); 
     else if (header.match(/destaque/)) obj.destaque = val;
     else if (header.match(/descricao|descri[cç][aã]o/)) obj.descricao = val;
     else if (header.match(/dataoferta/)) {
@@ -201,20 +192,19 @@ function mapRowToProduct(row, headers) {
   // Normalização
   obj.nome = obj.nome || "";
   obj.preco = obj.preco !== undefined ? obj.preco : 0;
-  obj.categoria = obj.categoria || "";
+  obj.categoria = obj.categoria || "outros"; // Categoria principal
+  obj.tipo = obj.tipo || ""; // Sub-categoria
   obj.genero = obj.genero || "";
   obj.id = (obj.id || `${Date.now()}-${Math.random()}`).toString(); 
-  obj.tipo = obj.categoria;
   obj.oferta = (obj.destaque && obj.destaque !== "") || (obj.dataOferta && obj.dataOferta !== "");
   if (obj.images.length === 0) {
     obj.images.push("https://via.placeholder.com/800x800?text=Sem+Imagem");
   }
   
-  // Lógica de Preço (troca)
   if (obj.precoOferta !== undefined && obj.precoOferta < obj.preco) {
-    obj.precoOriginal = obj.preco; // Guarda o preço antigo
-    obj.preco = obj.precoOferta;   // Define o preço de oferta como o principal
-    obj.oferta = true; // Força a ser oferta se tiver preço promocional
+    obj.precoOriginal = obj.preco; 
+    obj.preco = obj.precoOferta;   
+    obj.oferta = true; 
   }
 
   return obj;
@@ -226,24 +216,97 @@ function parseGvizResponse(resp) {
   const rows = resp.table.rows || [];
   const produtos = rows.map(r => mapRowToProduct(r.c, cols));
   
-  produtos.forEach(p => allProducts.set(p.id, p));
+  // Popula o mapa global de produtos e o mapa de categorias
+  produtos.forEach(p => {
+    allProducts.set(p.id, p);
+    
+    // Se a categoria (relogio, fone) não existe no mapa, crie-a
+    if (!dynamicCategories.has(p.categoria)) {
+      dynamicCategories.set(p.categoria, {
+        tipos: new Set(),
+        generos: new Set(),
+        containerId: `lista-${p.categoria}`, // ex: lista-relogio
+        sectionId: `secao-${p.categoria}`,   // ex: secao-relogio
+        sectionEl: null, // O elemento HTML (será criado depois)
+        containerEl: null // O elemento HTML (será criado depois)
+      });
+    }
+    
+    // Adiciona os tipos e gêneros encontrados para essa categoria
+    const catData = dynamicCategories.get(p.categoria);
+    if (p.tipo) catData.tipos.add(p.tipo);
+    if (p.genero) catData.generos.add(p.genero);
+  });
   return produtos;
 }
 
-function popularSelectComCategorias(produtos, selectElement, tipoFilter) {
-  const set = new Set();
-  produtos.forEach(p => {
-    if (tipoFilter && p.tipo !== tipoFilter) return;
-    if (p.estilo) set.add(p.estilo.toString().toLowerCase());
-  });
-  selectElement.innerHTML = '<option value="">Todas as categorias</option>';
-  Array.from(set).sort().forEach(cat => {
+/**
+ * --- NOVA FUNÇÃO ---
+ * Popula um dropdown (select) com as opções de um Set.
+ */
+function popularDropdown(selectElement, optionsSet, placeholder) {
+  selectElement.innerHTML = `<option value="">${placeholder}</option>`; // Limpa
+  Array.from(optionsSet).sort().forEach(option => {
     const opt = document.createElement('option');
-    opt.value = cat;
-    opt.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+    opt.value = option;
+    opt.textContent = option.charAt(0).toUpperCase() + option.slice(1);
     selectElement.appendChild(opt);
   });
 }
+
+/**
+ * --- NOVA FUNÇÃO ---
+ * Cria dinamicamente as seções de categoria no <main>
+ */
+function criarSecoesCategorias(mainElement, navElement) {
+  // 1. Adiciona "Ofertas" ao menu (seção fixa)
+  const navOfertas = document.createElement('a');
+  navOfertas.href = "#secao-ofertas";
+  navOfertas.textContent = "Ofertas";
+  navElement.appendChild(navOfertas);
+
+  // 2. Ordena as categorias alfabeticamente
+  const categoriasOrdenadas = Array.from(dynamicCategories.keys()).sort();
+  
+  // 3. Cria a seção e o link de menu para cada categoria
+  for (const categoria of categoriasOrdenadas) {
+    const catData = dynamicCategories.get(categoria);
+    const nomeCategoria = categoria.charAt(0).toUpperCase() + categoria.slice(1);
+    
+    // Cria o link do menu
+    const navLink = document.createElement('a');
+    navLink.href = `#${catData.sectionId}`;
+    navLink.textContent = nomeCategoria;
+    navElement.appendChild(navLink);
+    
+    // Cria a seção na página
+    const sectionEl = document.createElement('div');
+    sectionEl.id = catData.sectionId;
+    sectionEl.className = 'secao-categoria';
+    
+    // Cria o título
+    const titleEl = document.createElement('h2');
+    titleEl.className = 'titulo-secao';
+    titleEl.textContent = nomeCategoria;
+    
+    // Cria o container dos produtos
+    const containerEl = document.createElement('div');
+    containerEl.className = 'container';
+    containerEl.id = catData.containerId;
+    
+    // Monta a seção
+    sectionEl.appendChild(titleEl);
+    sectionEl.appendChild(containerEl);
+    
+    // Adiciona na página
+    mainElement.appendChild(sectionEl);
+    
+    // Salva os elementos criados no mapa para referência futura
+    catData.sectionEl = sectionEl;
+    catData.containerEl = containerEl;
+  }
+}
+
 
 // ===================================
 // RENDERIZAÇÃO DE CARDS E TIMERS
@@ -259,7 +322,6 @@ function criarCardHTML(p) {
     .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`)
     .join('');
 
-  // Lógica de Preço para o HTML
   const precoFmt = formatPrice(p.preco); 
   const precoOriginalFmt = p.precoOriginal
     ? `<span class="preco-original">${formatPrice(p.precoOriginal)}</span>`
@@ -286,12 +348,10 @@ function criarCardHTML(p) {
     </div>
     <div class="card-img-thumbs">${thumbsHTML}</div>
     <h3>${escapeHtml(p.nome)}</h3>
-    
     <p class="preco-container">
       ${precoOriginalFmt}
       <span class="preco-atual">${precoFmt}</span>
     </p>
-    
     <button class="btn-add-cart" data-id="${escapeHtml(p.id)}" ${btnDisabled}>
       ${btnText}
     </button>
@@ -326,6 +386,9 @@ function clearTimers(containerId) {
 }
 
 function iniciarContadores(produtos, containerId) {
+  // Limpa timers antigos desse container
+  clearTimers(containerId);
+  
   produtos.forEach(p => {
     if (!p.dataOferta) return; 
     const timerEl = document.getElementById(`timer-${p.id}`);
@@ -361,35 +424,53 @@ function iniciarContadores(produtos, containerId) {
       const s = Math.floor((diff % (1000 * 60)) / 1000);
       timerEl.innerHTML = `${d}d ${h}h ${m}m ${s}s`;
     }, 1000);
+    
+    // Armazena o ID do timer por container
+    if (!activeTimers[containerId]) activeTimers[containerId] = [];
     activeTimers[containerId].push(intervalId);
   });
 }
 
 function criarCardsEAdicionar(container, produtos){
-  clearTimers(container.id);
   vazioElemento(container);
   if(!produtos || produtos.length === 0){
     mostrarMensagemNoContainer(container, 'Nenhum produto encontrado.');
     return;
   }
+  
   produtos.forEach(p => {
     const card = criarCardHTML(p);
     container.appendChild(card);
   });
+  
+  // Inicia os contadores para este container específico
   iniciarContadores(produtos, container.id);
 }
 
-function filtrarLista(produtos, { genero = '', categoria = '', precoMin = 0, precoMax = Infinity, tipo = '' } = {}){
+/**
+ * --- ATUALIZADO (REQ 1) ---
+ * Filtra a lista com base nos novos filtros unificados
+ */
+function filtrarLista(produtos, { categoria = '', genero = '', tipo = '', precoMin = 0, precoMax = Infinity } = {}){
   return produtos.filter(p => {
-    if(tipo && p.tipo !== tipo) return false;
+    // Filtra por Categoria Principal (relogio, fone)
+    if(categoria && p.categoria !== categoria) return false;
+    
+    // Filtra por Gênero
     if(genero && String(p.genero || '').toLowerCase() !== String(genero || '').toLowerCase()) return false;
-    if(categoria && String(p.estilo || '').toLowerCase() !== String(categoria || '').toLowerCase()) return false;
+    
+    // Filtra por Tipo (classico, bluethon)
+    if(tipo && String(p.tipo || '').toLowerCase() !== String(tipo || '').toLowerCase()) return false;
+    
+    // Filtra por Preço
     const preco = Number(p.preco || 0);
     if(!isNaN(precoMin) && preco < precoMin) return false;
     if(!isNaN(precoMax) && preco > precoMax) return false;
+    
     return true;
   });
 }
+
 
 function adicionarClickHandlerMiniaturas(container) {
   container.addEventListener('click', (e) => {
@@ -416,7 +497,6 @@ function handleAddToCartClick(e) {
   const cart = getCart();
   if (cart.find(p => p.id === product.id)) return;
   
-  // Salva o preço final (que já é o de oferta, se houver)
   cart.push({ id: product.id, nome: product.nome, preco: product.preco });
   saveCart(cart);
   updateCartButtonText();
@@ -430,27 +510,26 @@ function handleAddToCartClick(e) {
 // ===================================
 
 async function loadAndRender(){
-  const listaRelogiosEl = document.getElementById('listaRelogios');
-  const listaAcessoriosEl = document.getElementById('listaAcessorios');
+  // Elementos principais
+  const mainElement = document.querySelector('main');
+  const navElement = document.getElementById('menuNavegacao');
   const listaOfertasEl = document.getElementById('listaOfertas');
-
-  const filtroGeneroRelogio = document.getElementById('filtroGeneroRelogio');
-  const filtroCategoriaRelogio = document.getElementById('filtroCategoriaRelogio');
-  const precoMinRelogio = document.getElementById('precoMinRelogio');
-  const precoMaxRelogio = document.getElementById('precoMaxRelogio');
-  const btnFiltrarRelogio = document.getElementById('filtrarRelogio');
-
-  const filtroGeneroAcessorio = document.getElementById('filtroGeneroAcessorio');
-  const filtroCategoriaAcessorio = document.getElementById('filtroCategoriaAcessorio');
-  const precoMinAcessorio = document.getElementById('precoMinAcessorio');
-  const precoMaxAcessorio = document.getElementById('precoMaxAcessorio');
-  const btnFiltrarAcessorio = document.getElementById('filtrarAcessorio');
-
-  let produtos = [];
+  const secaoOfertasEl = document.getElementById('secao-ofertas');
+  
+  // Seletores de Filtro
+  const filtroCategoria = document.getElementById('filtroCategoria');
+  const filtroGenero = document.getElementById('filtroGenero');
+  const filtroTipo = document.getElementById('filtroTipo');
+  const precoMin = document.getElementById('precoMin');
+  const precoMax = document.getElementById('precoMax');
+  const btnFiltrar = document.getElementById('filtrarAgora');
+  const btnLimparFiltros = document.getElementById('limparFiltros');
+  
+  let produtos = []; // Array com TODOS os produtos
 
   try{
     const resp = await fetchSheetJson(SHEET_ID, GID);
-    produtos = parseGvizResponse(resp);
+    produtos = parseGvizResponse(resp); // Já popula allProducts e dynamicCategories
     console.log('Dados carregados (gviz):', produtos.length, 'produtos');
   }catch(err){
     console.warn('Falha ao carregar via gviz, tentando fallback opensheet:', err);
@@ -465,56 +544,162 @@ async function loadAndRender(){
         const row = headers.map(h => ({ v: obj[h] }));
         return mapRowToProduct(row, headers);
       });
-      produtos.forEach(p => allProducts.set(p.id, p));
+      // Popula allProducts e dynamicCategories no fallback
+      produtos.forEach(p => {
+        allProducts.set(p.id, p);
+        if (!dynamicCategories.has(p.categoria)) {
+          dynamicCategories.set(p.categoria, {
+            tipos: new Set(),
+            generos: new Set(),
+            containerId: `lista-${p.categoria}`,
+            sectionId: `secao-${p.categoria}`,
+            sectionEl: null,
+            containerEl: null
+          });
+        }
+        const catData = dynamicCategories.get(p.categoria);
+        if (p.tipo) catData.tipos.add(p.tipo);
+        if (p.genero) catData.generos.add(p.genero);
+      });
       console.log('Dados carregados (opensheet):', produtos.length, 'produtos');
     }catch(err2){
       console.error('Erro ao carregar planilha pelo fallback:', err2);
-      [listaRelogiosEl, listaAcessoriosEl, listaOfertasEl].forEach(el => 
-        mostrarMensagemNoContainer(el, 'Erro ao carregar produtos. Verifique o console.')
-      );
+      mostrarMensagemNoContainer(listaOfertasEl, 'Erro ao carregar produtos. Verifique o console.');
       return;
     }
   }
 
-  // Popular selects e renderizar cards
-  popularSelectComCategorias(produtos, filtroCategoriaRelogio, 'relogio');
-  popularSelectComCategorias(produtos, filtroCategoriaAcessorio, 'acessorio');
+  // --- RENDERIZAÇÃO INICIAL DINÂMICA ---
+  
+  // 1. Cria as Seções e o Menu de Navegação
+  criarSecoesCategorias(mainElement, navElement);
+  
+  // 2. Popula o filtro principal de Categorias
+  popularDropdown(filtroCategoria, dynamicCategories.keys(), "Todas as Categorias");
 
-  criarCardsEAdicionar(listaRelogiosEl, filtrarLista(produtos, { tipo: 'relogio' }));
-  criarCardsEAdicionar(listaAcessoriosEl, filtrarLista(produtos, { tipo: 'acessorio' }));
+  // 3. Renderização Inicial (mostrar tudo em suas devidas seções)
   criarCardsEAdicionar(listaOfertasEl, produtos.filter(p => p.oferta));
   
-  updateCartButtonText();
+  for (const [categoria, catData] of dynamicCategories.entries()) {
+    const produtosDaCategoria = produtos.filter(p => p.categoria === categoria);
+    criarCardsEAdicionar(catData.containerEl, produtosDaCategoria);
+  }
+  
+  updateCartButtonText(); // Atualiza botão do carrinho
 
-  // Handlers de Filtro
-  btnFiltrarRelogio.addEventListener('click', () => {
-    const genero = filtroGeneroRelogio.value;
-    const categoria = filtroCategoriaRelogio.value;
-    const precoMin = precoMinRelogio.value ? Number(precoMinRelogio.value) : 0;
-    const precoMax = precoMaxRelogio.value ? Number(precoMaxRelogio.value) : Infinity;
-    const result = filtrarLista(produtos, { genero, categoria, precoMin, precoMax, tipo: 'relogio' });
-    criarCardsEAdicionar(listaRelogiosEl, result);
+  // --- NOVA LÓGICA DE FILTROS ---
+
+  // 1. Listener para Categoria Principal (mostrar/esconder filtros)
+  filtroCategoria.addEventListener('change', (e) => {
+    const categoria = e.target.value;
+    
+    // Reseta os filtros secundários
+    filtroGenero.value = "";
+    filtroTipo.value = "";
+    
+    // Esconde todos por padrão
+    filtroGenero.style.display = 'none';
+    filtroTipo.style.display = 'none';
+
+    if (categoria) {
+      const catData = dynamicCategories.get(categoria);
+      if (catData) {
+        // Mostra/Popula Gênero (se houver)
+        if (catData.generos.size > 0) {
+          popularDropdown(filtroGenero, catData.generos, "Todos os Gêneros");
+          filtroGenero.style.display = 'block';
+        }
+        // Mostra/Popula Tipo (se houver)
+        if (catData.tipos.size > 0) {
+          popularDropdown(filtroTipo, catData.tipos, "Todos os Tipos");
+          filtroTipo.style.display = 'block';
+        }
+      }
+    }
   });
 
-  btnFiltrarAcessorio.addEventListener('click', () => {
-    const genero = filtroGeneroAcessorio.value;
-    const categoria = filtroCategoriaAcessorio.value;
-    const precoMin = precoMinAcessorio.value ? Number(precoMinAcessorio.value) : 0;
-    const precoMax = precoMaxAcessorio.value ? Number(precoMaxAcessorio.value) : Infinity;
-    const result = filtrarLista(produtos, { genero, categoria, precoMin, precoMax, tipo: 'acessorio' });
-    criarCardsEAdicionar(listaAcessoriosEl, result);
+  // 2. Listener para o botão "Aplicar Filtros"
+  btnFiltrar.addEventListener('click', () => {
+    const filtros = {
+      categoria: filtroCategoria.value,
+      genero: filtroGenero.value,
+      tipo: filtroTipo.value,
+      precoMin: precoMin.value ? Number(precoMin.value) : 0,
+      precoMax: precoMax.value ? Number(precoMax.value) : Infinity,
+    };
+
+    // Filtra a lista completa de produtos
+    const produtosFiltrados = filtrarLista(produtos, filtros);
+    
+    // Mostra/Esconde as seções com base na categoria principal
+    secaoOfertasEl.style.display = 'block'; // Sempre mostra ofertas
+    
+    for (const [categoria, catData] of dynamicCategories.entries()) {
+      if (filtros.categoria && categoria !== filtros.categoria) {
+        catData.sectionEl.style.display = 'none'; // Esconde seção
+      } else {
+        catData.sectionEl.style.display = 'block'; // Mostra seção
+      }
+    }
+
+    // Re-renderiza todas as seções com a lista já filtrada
+    criarCardsEAdicionar(listaOfertasEl, produtosFiltrados.filter(p => p.oferta));
+    
+    for (const [categoria, catData] of dynamicCategories.entries()) {
+      const produtosDaCategoriaFiltrados = produtosFiltrados.filter(p => p.categoria === categoria);
+      criarCardsEAdicionar(catData.containerEl, produtosDaCategoriaFiltrados);
+    }
   });
+
+  // 3. Listener para o botão "Limpar Filtros"
+  btnLimparFiltros.addEventListener('click', () => {
+    // Reseta valores dos filtros
+    filtroCategoria.value = "";
+    filtroGenero.value = "";
+    filtroTipo.value = "";
+    precoMin.value = "";
+    precoMax.value = "";
+    
+    // Esconde filtros dinâmicos
+    filtroGenero.style.display = 'none';
+    filtroTipo.style.display = 'none';
+    
+    // Mostra todas as seções
+    secaoOfertasEl.style.display = 'block';
+    for (const catData of dynamicCategories.values()) {
+      catData.sectionEl.style.display = 'block';
+    }
+
+    // Renderiza tudo (estado inicial)
+    criarCardsEAdicionar(listaOfertasEl, produtos.filter(p => p.oferta));
+    for (const [categoria, catData] of dynamicCategories.entries()) {
+      const produtosDaCategoria = produtos.filter(p => p.categoria === categoria);
+      criarCardsEAdicionar(catData.containerEl, produtosDaCategoria);
+    }
+  });
+  
   
   // Handlers de Clique nos Cards (Miniaturas e "Adicionar")
-  [listaRelogiosEl, listaAcessoriosEl, listaOfertasEl].forEach(container => {
-    adicionarClickHandlerMiniaturas(container);
-    container.addEventListener('click', handleAddToCartClick);
+  // Precisamos adicionar ao 'main' pois os containers são dinâmicos
+  mainElement.addEventListener('click', (e) => {
+    adicionarClickHandlerMiniaturas(e);
+    handleAddToCartClick(e);
   });
-
-  // ===========================================
-  // LISTENERS DO MODAL E BOTÃO PRINCIPAL
-  // ===========================================
   
+  // Função de clique de miniatura adaptada para delegação
+  function adicionarClickHandlerMiniaturas(e) {
+    if (e.target.classList.contains('card-thumb')) {
+      e.preventDefault(); 
+      const card = e.target.closest('.card');
+      if (card) {
+        const mainImg = card.querySelector('.card-img-main-pic');
+        if (mainImg) mainImg.src = e.target.src;
+      }
+    }
+  }
+
+
+  // Handlers do Modal e Botão Principal
   const btnWhats = document.getElementById('enviarWhatsApp');
   btnWhats.addEventListener('click', () => {
     if (getCart().length === 0) {

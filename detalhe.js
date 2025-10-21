@@ -23,7 +23,6 @@ function escapeHtml(str){
 }
 
 /**
- * --- ATUALIZADO ---
  * Renderiza os detalhes do produto com o novo formato de preço.
  */
 function renderizarDetalhes(produto) {
@@ -43,13 +42,12 @@ function renderizarDetalhes(produto) {
     .map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`)
     .join('');
 
-  // --- LÓGICA DE PREÇO ATUALIZADA ---
+  // Lógica de Preço
   const precoFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.preco || 0);
   
   const precoOriginalFmt = produto.precoOriginal
     ? `<span class="preco-original">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.precoOriginal)}</span>`
     : '';
-  // --- FIM DA LÓGICA ---
 
   // Formata descrição
   const descricaoHTML = produto.descricao ? escapeHtml(produto.descricao) : 'Nenhuma descrição disponível.';
@@ -82,7 +80,6 @@ function renderizarDetalhes(produto) {
     <p class="detalhe-descricao">${descricaoHTML}</p>
   `;
   
-  // Adiciona o handler de clique para as miniaturas desta página
   adicionarClickHandlerMiniaturasDetalhe(container);
 }
 
@@ -96,7 +93,7 @@ function adicionarClickHandlerMiniaturasDetalhe(container) {
       
       const mainImg = document.getElementById('detalhe-img-main');
       if (mainImg) {
-        mainImg.src = e.target.src; // Troca a imagem
+        mainImg.src = e.target.src; 
       }
     }
   });
@@ -131,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (cart.find(item => item.id === produto.id)) return;
 
-        // Salva o preço final (que já é o de oferta, se houver)
         cart.push({ id: produto.id, nome: produto.nome, preco: produto.preco });
         saveCart(cart);
         
