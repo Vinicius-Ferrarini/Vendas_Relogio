@@ -27,14 +27,19 @@
         <option value="">Todos os Gêneros</option>
         </select>
 
-      <select id="filtroTipo" class="filtro-grupo" style="display: none;">
-        <option value="">Todos os Tipos</option>
-        </select>
+      <div id="filtroTipoContainer" class="filtro-grupo checkboxes-container" style="display: none;">
+        <span class="checkboxes-title">Tipos:</span>
+        </div>
       
       <input type="number" id="precoMin" placeholder="Mín. R$" />
       <input type="number" id="precoMax" placeholder="Máx. R$" />
       
-      <button id="filtrarAgora">Aplicar Filtros</button>
+      <div class="sort-buttons">
+          Ordenar por Preço:
+          <button id="sortAsc">Menor Preço</button>
+          <button id="sortDesc">Maior Preço</button>
+      </div>
+
       <button id="limparFiltros" style="background-color: var(--muted);">Limpar</button>
     </div>
   </section>
@@ -49,7 +54,7 @@
     </main>
 
   <div class="modal-overlay" id="modalCarrinho" style="display: none;">
-    <div class="modal-content">
+     <div class="modal-content">
       <div class="modal-header">
         <h2>Meu Carrinho</h2>
         <button class="modal-close-btn" id="fecharModal">&times;</button>
