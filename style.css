@@ -11,7 +11,6 @@
 /* --- 1. HEADER E NAVEGAÇÃO --- */
 /* =================================== */
 html {
-  /* Habilita o scroll suave para o menu */
   scroll-behavior: smooth;
 }
 
@@ -19,7 +18,7 @@ html {
 body{
   margin:0;
   font-family:Inter, "Segoe UI", Arial, sans-serif;
-  background-color: burlywood;
+  background-color: burlywood; /* Sua cor de fundo */
   color:#111827;
   -webkit-font-smoothing:antialiased;
 }
@@ -31,7 +30,7 @@ header{
   font-size:1.25rem;
   font-weight:600;
   letter-spacing:0.4px;
-  position:sticky;
+  position:sticky; /* O header continua sticky */
   top:0;
   z-index:20;
 }
@@ -40,7 +39,7 @@ header{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; /* Para telas pequenas */
+  flex-wrap: wrap; 
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -65,7 +64,7 @@ nav a:hover {
 }
 
 /* =================================== */
-/* --- 2. FILTROS UNIFICADOS (STICKY) --- */
+/* --- 2. FILTROS (NÃO MAIS STICKY) --- */
 /* =================================== */
 .controls{
   display:flex;
@@ -75,10 +74,15 @@ nav a:hover {
   padding:12px;
   background:var(--card);
   box-shadow:0 2px 6px rgba(2,6,23,0.06);
+  
+  /* --- MUDANÇA AQUI --- */
+  /* Removemos as 3 linhas abaixo para que o filtro role com a página */
+  /*
   position:sticky;
-  /* Gruda abaixo do header (altura do header) */
   top: 67px; 
   z-index:15;
+  */
+  /* --- FIM DA MUDANÇA --- */
 }
 
 .filters-section{
@@ -130,15 +134,16 @@ button{
 /* =================================== */
 /* --- 3. CONTAINERS DAS SEÇÕES (Scroll) --- */
 /* =================================== */
-/* Adiciona padding no topo para o scroll não
-   ficar escondido atrás do header/filtros */
+/* O 'padding-top' e 'margin-top' agora só precisam
+  compensar o HEADER sticky, e não mais o filtro.
+*/
 #secao-ofertas,
 .secao-categoria {
-  /* Altura do header (67px) + altura dos filtros (68px) + espaço (20px) */
-  padding-top: 155px;
-  margin-top: -155px; 
+  /* Altura do header (67px) + espaço (20px) */
+  padding-top: 87px;
+  margin-top: -87px; 
 }
-/* A primeira seção (ofertas) não precisa de padding extra */
+/* A primeira seção (ofertas) não precisa do padding de âncora */
 #secao-ofertas {
   padding-top: 20px;
   margin-top: 0;
@@ -522,7 +527,7 @@ footer{
 }
 
 /* RESPONSIVIDADE */
-@media (max-width:600px){
+@media (max-width: 600px){
   /* Ajusta o header no mobile */
   .header-content {
     justify-content: center;
@@ -531,30 +536,45 @@ footer{
   nav {
     justify-content: center;
     width: 100%;
-    flex-wrap: wrap; /* Permite que o menu quebre a linha se tiver muitos itens */
+    flex-wrap: wrap; 
   }
   nav a {
     font-size: 0.9rem;
     padding: 4px 8px;
   }
   
-  /* Ajusta o topo do sticky dos filtros */
-  .controls {
-    /* (Header 67px + Nav 35px) = 102px. Damos uma folga. */
-    top: 102px; 
-  }
+  /* Removemos a regra 'top' do .controls */
   
-  /* Ajusta o padding do scroll */
+  /* Ajusta o padding do scroll SÓ para o header */
   #secao-ofertas,
   .secao-categoria {
-    padding-top: 190px;
-    margin-top: -190px;
+    /* (Header ~102px a 137px) + 20px de espaço */
+    /* Usamos um valor seguro que cubra o header maior */
+    padding-top: 157px; 
+    margin-top: -157px;
   }
   #secao-ofertas {
     padding-top: 20px;
     margin-top: 0;
   }
+
+  /* --- MUDANÇA PRINCIPAL AQUI --- */
   
+  /* 1. Reduz o espaçamento entre cards no mobile */
+  .container {
+    gap: 10px; 
+    padding: 0 10px; /* Reduz padding lateral */
+  }
+
+  /* 2. Reduz a LARGURA FIXA do card no mobile para caberem dois */
+  .card {
+    /* Original era 240px. 
+       Com 150px, 2 cards + 10px de gap = 310px. 
+       Cabe na maioria dos celulares (ex: iPhone SE tem 320px). */
+    width: 150px; 
+  }
+
+  /* 3. Ajusta o tamanho das miniaturas proporcionalmente */
   .card-img-thumbs {
     height: 35px;
   }
@@ -562,6 +582,7 @@ footer{
     width: 35px;
     height: 35px;
   }
+  /* --- FIM DA MUDANÇA --- */
   
   .detalhe-container .card-img-thumbs {
     height: 60px;
@@ -581,15 +602,12 @@ footer{
   }
 }
 
-/* Ajuste fino para o sticky top no mobile quando o menu quebra */
+/* Ajuste fino para o padding de scroll no mobile quando o menu quebra */
 @media (max-width: 420px) {
-  .controls {
-    top: 137px; /* Aumenta o espaço se o menu quebrar em 2 linhas */
-  }
   #secao-ofertas,
   .secao-categoria {
-    padding-top: 225px; /* (Header 137px + Filtros 68px) + espaço */
-    margin-top: -225px;
+    padding-top: 157px; 
+    margin-top: -157px;
   }
   #secao-ofertas {
     padding-top: 20px;
