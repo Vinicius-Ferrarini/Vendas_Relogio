@@ -1,56 +1,31 @@
-:root{
-  --bg: #f7f8fa;
-  --card: #fff;
-  --accent: #25d366;
-  --muted: #6b7280;
-  --oferta-bg: #ef4444; 
-  --timer-bg: #ffc107; 
+:root{ /* ... cores como antes ... */ 
+  --bg: #f7f8fa; --card: #fff; --accent: #25d366; --muted: #6b7280; --oferta-bg: #ef4444; --timer-bg: #ffc107; 
 }
-
-/* =================================== */
-/* HEADER E NAVEGAÇÃO                  */
-/* =================================== */
 html { scroll-behavior: smooth; }
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter, "Segoe UI", Arial, sans-serif;
-  background-color: burlywood; 
-  color:#111827;
-  -webkit-font-smoothing:antialiased;
-}
-header{ 
-  background:#0f1724; 
-  color:#fff; 
-  padding:0.7rem 1rem; 
-  font-size:1.25rem; 
-  font-weight:600; 
-  letter-spacing:0.4px; 
-  position:sticky; 
-  top:0; 
-  z-index:20; 
-}
+body{ margin:0; font-family:Inter, "Segoe UI", Arial, sans-serif; background-color: burlywood; color:#111827; -webkit-font-smoothing:antialiased; }
+header{ background:#0f1724; color:#fff; padding:0.7rem 1rem; font-size:1.25rem; font-weight:600; letter-spacing:0.4px; position:sticky; top:0; z-index:20; }
 .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
 nav { display: flex; gap: 15px; }
 nav a { color: #fff; text-decoration: none; font-size: 1rem; font-weight: 500; padding: 5px 10px; border-radius: 6px; transition: background-color 0.2s ease; }
 nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
-
-/* =================================== */
-/* FILTROS (NÃO STICKY)               */
-/* =================================== */
-.controls{ 
-  display:flex; 
-  gap:12px; 
-  flex-wrap:wrap; 
-  justify-content:center; 
-  padding:8px 12px; 
-  background:var(--card); 
-  box-shadow:0 2px 6px rgba(2,6,23,0.06); 
-}
+.controls{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; padding:8px 12px; background:var(--card); box-shadow:0 2px 6px rgba(2,6,23,0.06); }
 .filters-section{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:6px; border-radius:8px; justify-content: center; }
 .filters-section h3{ width:100%; margin:0 0 6px 0; font-size:0.95rem; color:var(--muted); text-align: center; }
 .filtro-grupo { display: flex; gap: 8px; }
-select, input[type="number"], button{ padding:8px 10px; border-radius:8px; border:1px solid #d1d5db; font-size:0.95rem; }
+
+/* --- NOVO: Estilo campo de pesquisa --- */
+.filtro-pesquisa {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+  min-width: 180px; /* Largura mínima */
+  flex-grow: 1; /* Tenta ocupar espaço */
+}
+/* --- FIM --- */
+
+select, input[type="number"], button, textarea { padding:8px 10px; border-radius:8px; border:1px solid #d1d5db; font-size:0.95rem; font-family: inherit; } 
 button{ background:var(--accent); color:#fff; border:0; cursor:pointer; }
 .checkboxes-container { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 5px; border: 1px solid #d1d5db; border-radius: 8px; }
 .checkboxes-title { font-size: 0.9rem; color: var(--muted); margin-right: 5px; }
@@ -59,29 +34,22 @@ button{ background:var(--accent); color:#fff; border:0; cursor:pointer; }
 .sort-buttons { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: var(--muted); }
 .sort-buttons button { background-color: #eee; color: #333; padding: 6px 10px; font-size: 0.85rem; }
 .sort-buttons button.active { background-color: var(--accent); color: white; }
-
-.titulo-secao{ 
-  text-align:center; 
-  margin:15px 0 6px; 
-  color:#0f1724; 
-  font-weight:600; 
-}
-
-/* --- AJUSTE: Remove margem superior do título de Ofertas --- */
-#secao-ofertas .titulo-secao {
-  margin-top: 0; 
-  padding-top: 15px; /* Adiciona um pouco de padding para não colar totalmente */
-}
-/* --- FIM DO AJUSTE --- */
-
-/* CONTAINERS DAS SEÇÕES (Scroll) */
+.titulo-secao{ text-align:center; margin:15px 0 6px; color:#0f1724; font-weight:600; }
+#secao-ofertas .titulo-secao { margin-top: 0; padding-top: 15px; }
 #secao-ofertas, .secao-categoria { padding-top: 80px; margin-top: -80px; } 
-#secao-ofertas { padding-top: 20px; margin-top: 0; } /* Primeira seção não precisa compensar */
-
-/* LAYOUT DOS PRODUTOS (Flexbox) */
+#secao-ofertas { padding-top: 20px; margin-top: 0; }
 .container{ max-width:1100px; margin:0 auto 10px; padding:0 16px; gap:14px; display: flex; flex-wrap: wrap; justify-content: center; }
 
-/* CARD DE PRODUTO */
+/* --- NOVO: Estilo mensagem Carregando --- */
+.loading-message {
+  width: 100%; /* Ocupa a largura do container */
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+/* --- FIM --- */
+
 .card{ width: 240px; background:var(--card); border-radius:12px; box-shadow:0 6px 18px rgba(15,23,42,0.06); padding:10px; text-align:center; display:flex; flex-direction:column; gap:8px; transition:transform .15s ease, box-shadow .15s ease; position: relative; }
 .card:hover{ transform:translateY(-4px); box-shadow:0 12px 30px rgba(15,23,42,0.08); }
 .card-img-main { width: 100%; aspect-ratio: 1 / 1; border-radius: 8px; padding: 10px; border-bottom: 1px solid #eee; }
@@ -94,22 +62,14 @@ button{ background:var(--accent); color:#fff; border:0; cursor:pointer; }
 .card-badge { position:absolute; right:10px; top:10px; background: var(--oferta-bg); color:#fff; padding: 6px 8px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; z-index: 2; }
 .card-timer { position: absolute; left:10px; top:10px; background: var(--timer-bg); color:#333; padding: 6px 8px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; z-index: 2; }
 .card h3{ margin:0; font-size:1rem; flex-shrink: 0; }
-
-/* ESTILOS DE PREÇO */
 .card .preco-container { margin: 0; padding: 0; font-weight: 700; color: #0f1724; display: block; flex-shrink: 0; min-height: 1.5em; }
 .card .preco-atual { font-size: 1.25rem; color: var(--accent); display: inline-block; line-height: 1.2; }
 .card .preco-original { font-size: 0.9rem; font-weight: 400; color: var(--muted); text-decoration: line-through; margin-right: 5px; display: inline-block; line-height: 1.2; }
-
-/* Botão "Adicionar ao Carrinho" */
 .btn-add-cart { padding: 10px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; position: relative; z-index: 10; flex-shrink: 0; margin-top: 4px; }
 .btn-add-cart:hover { background: #1da453; }
 .btn-add-cart:disabled { background: var(--muted); color: #eee; cursor: not-allowed; }
-
-/* FOOTER */
 footer{ position:sticky; bottom:0; background:var(--card); padding:12px; text-align:center; box-shadow:0 -6px 18px rgba(2,6,23,0.03); z-index: 50; }
 #enviarWhatsApp{ width:100%; max-width:420px; padding:12px 14px; font-size:1.05rem; border-radius:10px; }
-
-/* PÁGINA DE DETALHES */
 .detalhe-container { max-width: 800px; margin: 20px auto; padding: 20px; background: var(--card); border-radius: 12px; box-shadow: 0 6px 18px rgba(15,23,42,0.06); }
 .link-voltar { display: inline-block; margin-bottom: 20px; color: var(--muted); text-decoration: none; font-weight: 600; }
 .link-voltar:hover { color: #000; }
@@ -122,9 +82,12 @@ footer{ position:sticky; bottom:0; background:var(--card); padding:12px; text-al
 .detalhe-preco { margin-bottom: 20px; }
 .detalhe-preco .preco-atual { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
 .detalhe-preco .preco-original { font-size: 1rem; font-weight: 400; color: var(--muted); text-decoration: line-through; margin-right: 8px; }
-.detalhe-btn-whats { width: 100%; padding: 14px; font-size: 1.1rem; margin-bottom: 20px; }
-
-/* MODAL DE CARRINHO */
+.detalhe-btn-whats { width: 100%; padding: 14px; font-size: 1.1rem; margin-bottom: 10px; } 
+.detalhe-pedido-rapido { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+.detalhe-pedido-rapido label { font-size: 0.95rem; color: var(--muted); }
+.detalhe-pedido-rapido input[type="number"] { width: 70px; text-align: center;}
+.detalhe-pedido-rapido button { flex-grow: 1; background-color: #ff9800; }
+.detalhe-pedido-rapido button:hover { background-color: #f57c00; }
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 15px; }
 .modal-content { background: var(--card); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); width: 100%; max-width: 500px; max-height: 90vh; display: flex; flex-direction: column; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; }
@@ -138,8 +101,15 @@ footer{ position:sticky; bottom:0; background:var(--card); padding:12px; text-al
 .cart-item-modal-info span { display: block; }
 .cart-item-modal-info .nome { font-weight: 600; font-size: 1.05rem; }
 .cart-item-modal-info .preco { font-size: 0.95rem; color: var(--muted); }
+.cart-item-modal-controls { display: flex; align-items: center; gap: 5px; }
+.cart-item-modal-controls button { background-color: #eee; color: #333; border: 1px solid #d1d5db; border-radius: 50%; width: 28px; height: 28px; font-size: 1.2rem; line-height: 1; padding: 0; cursor: pointer; }
+.cart-item-modal-controls button:hover { background-color: #ddd; }
+.cart-item-modal-controls span { font-weight: 600; min-width: 20px; text-align: center;}
 .remover-item-btn { background: var(--oferta-bg); color: #fff; border: none; border-radius: 6px; padding: 8px 12px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
 .remover-item-btn:hover { background: #d93737; }
+.modal-observacao { padding: 0 20px 15px 20px; border-top: 1px solid #eee; margin-top: -1px; }
+.modal-observacao label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: var(--muted); }
+.modal-observacao textarea { width: 100%; resize: vertical; }
 .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; background: #fdfdfd; border-radius: 0 0 12px 12px; }
 .modal-footer h3 { margin: 0 0 15px 0; font-size: 1.3rem; text-align: right; }
 #enviarPedidoModal { width: 100%; padding: 14px; font-size: 1.1rem; }
@@ -149,47 +119,27 @@ footer{ position:sticky; bottom:0; background:var(--card); padding:12px; text-al
   .header-content { justify-content: center; gap: 10px; }
   nav { justify-content: center; width: 100%; flex-wrap: wrap; }
   nav a { font-size: 0.9rem; padding: 4px 8px; }
-  
   #secao-ofertas, .secao-categoria { padding-top: 150px; margin-top: -150px; } 
   #secao-ofertas { padding-top: 20px; margin-top: 0; }
-
   .container { gap: 10px; padding: 0 10px; }
   .card { width: 150px; gap: 4px; }
-  
-  /* --- AJUSTE: Empilhar Timer e Badge no Mobile --- */
-  .card-timer,
-  .card-badge {
-    /* Ajustes para caber melhor */
-    padding: 4px 6px; 
-    font-size: 0.7rem; 
-    left: 5px; /* Mais perto da borda esquerda */
-    right: auto; /* Remove o alinhamento à direita */
-    width: auto; /* Permite que a largura se ajuste ao conteúdo */
-  }
-  .card-timer {
-    top: 5px; /* Posição do timer */
-  }
-  .card-badge {
-    top: 30px; /* Posição da badge (abaixo do timer) */
-    /* Garante que a badge não fique muito larga */
-    max-width: calc(100% - 10px); 
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  /* --- FIM DO AJUSTE --- */
-
+  .card-badge, .card-timer { padding: 4px 6px; font-size: 0.7rem; left: 5px; right: auto; width: auto; }
+  .card-timer { top: 5px; }
+  .card-badge { top: 30px; max-width: calc(100% - 10px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-img-thumbs { height: 35px; }
   .card-img-thumbs img { width: 35px; height: 35px; }
   .card .preco-container { display: flex; flex-direction: column; align-items: center; }
   .card .preco-original { margin-right: 0; margin-bottom: 2px; }
   .card .preco-atual { font-size: 1rem; }
-  
   .detalhe-container .card-img-thumbs { height: 60px; }
   .detalhe-container .card-img-thumbs img { width: 60px; height: 60px; }
   .detalhe-nome { font-size: 1.5rem; }
   .detalhe-preco .preco-atual { font-size: 1.3rem; }
   .detalhe-preco .preco-original { font-size: 0.9rem; }
+  .detalhe-pedido-rapido { flex-wrap: wrap;}
+  .detalhe-pedido-rapido label { width: 100%; margin-bottom: 0;}
+  .detalhe-pedido-rapido input[type="number"] { width: 60px;}
+  .detalhe-pedido-rapido button { font-size: 1rem; padding: 12px; }
 }
 
 @media (max-width: 420px) {

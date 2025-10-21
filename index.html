@@ -19,6 +19,8 @@
     <div class="filters-section">
       <h3>Filtros</h3>
       
+      <input type="search" id="filtroPesquisa" placeholder="Pesquisar por nome..." class="filtro-pesquisa">
+      
       <select id="filtroCategoria">
         <option value="">Todas as Categorias</option>
         </select>
@@ -48,9 +50,10 @@
   <main>
     <div id="secao-ofertas">
       <h2 class="titulo-secao">🔥 Ofertas da semana</h2>
-      <div class="container" id="listaOfertas"></div>
+      <div class="container" id="listaOfertas">
+        <div class="loading-message">Carregando produtos...</div>
+      </div>
     </div>
-    
     </main>
 
   <div class="modal-overlay" id="modalCarrinho" style="display: none;">
@@ -61,6 +64,10 @@
       </div>
       <div class="modal-body" id="listaCarrinhoModal">
         <p>Seu carrinho está vazio.</p>
+      </div>
+       <div class="modal-observacao">
+        <label for="observacaoPedido">Observações do Pedido:</label>
+        <textarea id="observacaoPedido" rows="3" placeholder="Ex: Entregar após as 18h, embrulhar para presente..."></textarea>
       </div>
       <div class="modal-footer">
         <h3 id="totalCarrinhoModal">Total: R$ 0,00</h3>
