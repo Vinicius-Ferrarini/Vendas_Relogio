@@ -1,4 +1,4 @@
-// script.js (COMPLETAMENTE NOVO)
+// script.js (CORRIGIDO PARA BUG ADICIONAR OFERTA)
 
 // ======= CONFIG =======
 const SHEET_ID = "1gU34_gLsxTHDy_nxhtg91-Ld6VaU4Zba65dBkZD-2aQ";
@@ -9,13 +9,10 @@ const WHATSAPP_NUMBER = "5543999705837";
 let activeTimers = {};
 let allProducts = new Map();
 let dynamicCategories = new Map();
-
-// --- NOVO: Estado da Ordenação ---
-let currentSortOrder = 'default'; // 'default', 'priceAsc', 'priceDesc'
-
+let currentSortOrder = 'default'; 
 
 // ===================================
-// FUNÇÕES DO CARRINHO (Sem alterações)
+// FUNÇÕES DO CARRINHO
 // ===================================
 function getCart() { return JSON.parse(localStorage.getItem('leandrinhoCart') || '[]'); }
 function saveCart(cart) { localStorage.setItem('leandrinhoCart', JSON.stringify(cart)); }
@@ -26,88 +23,36 @@ function updateCartButtonText() {
 }
 
 // ===================================
-// FUNÇÕES DO MODAL (Sem alterações)
+// FUNÇÕES DO MODAL
 // ===================================
 function formatPrice(price) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price || 0); }
-function abrirModalCarrinho() { /* ... (código como antes) ... */ 
-    const cart = getCart();
-    const modal = document.getElementById('modalCarrinho');
-    const modalBody = document.getElementById('listaCarrinhoModal');
-    const totalEl = document.getElementById('totalCarrinhoModal');
-    const enviarBtn = document.getElementById('enviarPedidoModal');
+function abrirModalCarrinho() { 
+    const cart = getCart(); const modal = document.getElementById('modalCarrinho'); const modalBody = document.getElementById('listaCarrinhoModal'); const totalEl = document.getElementById('totalCarrinhoModal'); const enviarBtn = document.getElementById('enviarPedidoModal');
     vazioElemento(modalBody);
-    if (cart.length === 0) {
-        modalBody.innerHTML = '<p>Seu carrinho está vazio.</p>';
-        totalEl.textContent = 'Total: R$ 0,00';
-        enviarBtn.style.display = 'none';
-    } else {
-        let total = 0;
-        cart.forEach(item => {
-            const itemEl = document.createElement('div');
-            itemEl.className = 'cart-item-modal';
-            itemEl.innerHTML = `
-            <div class="cart-item-modal-info">
-              <span class="nome">${escapeHtml(item.nome)}</span>
-              <span class="preco">${formatPrice(item.preco)}</span>
-            </div>
-            <button class="remover-item-btn" data-id="${escapeHtml(item.id)}">Remover</button>
-          `;
-            modalBody.appendChild(itemEl);
-            total += item.preco;
-        });
-        totalEl.textContent = `Total: ${formatPrice(total)}`;
-        enviarBtn.style.display = 'block';
-    }
+    if (cart.length === 0) { modalBody.innerHTML = '<p>Seu carrinho está vazio.</p>'; totalEl.textContent = 'Total: R$ 0,00'; enviarBtn.style.display = 'none'; } 
+    else { let total = 0; cart.forEach(item => { const itemEl = document.createElement('div'); itemEl.className = 'cart-item-modal'; itemEl.innerHTML = `<div class="cart-item-modal-info"><span class="nome">${escapeHtml(item.nome)}</span><span class="preco">${formatPrice(item.preco)}</span></div><button class="remover-item-btn" data-id="${escapeHtml(item.id)}">Remover</button>`; modalBody.appendChild(itemEl); total += item.preco; }); totalEl.textContent = `Total: ${formatPrice(total)}`; enviarBtn.style.display = 'block'; }
     modal.style.display = 'flex';
 }
 function fecharModalCarrinho() { document.getElementById('modalCarrinho').style.display = 'none'; }
 function handleRemoverItem(productId) {
-    let cart = getCart();
-    cart = cart.filter(item => item.id.toString() !== productId.toString());
-    saveCart(cart);
-    abrirModalCarrinho();
-    updateCartButtonText();
-    const cardBtn = document.querySelector(`.btn-add-cart[data-id="${productId}"]`);
-    if (cardBtn) { cardBtn.textContent = 'Adicionar ao Carrinho'; cardBtn.disabled = false; }
+    let cart = getCart(); cart = cart.filter(item => item.id.toString() !== productId.toString()); saveCart(cart);
+    abrirModalCarrinho(); updateCartButtonText();
+    const cardBtns = document.querySelectorAll(`.btn-add-cart[data-id="${productId}"]`); 
+    cardBtns.forEach(btn => { if (btn) { btn.textContent = 'Adicionar ao Carrinho'; btn.disabled = false; } });
 }
-function handleEnviarPedido() { /* ... (código como antes) ... */ 
-    const cart = getCart();
-    if (cart.length === 0){ alert('Seu carrinho está vazio.'); return; }
-    const lines = cart.map(p => `${p.nome} - ${formatPrice(p.preco)}`);
-    const msg = `Olá! Gostaria de comprar os seguintes itens:\n${lines.join('\n')}`;
-    const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-    window.open(wa, '_blank');
-    if (confirm("Pedido enviado! Deseja limpar o carrinho?")) {
-        saveCart([]); 
-        updateCartButtonText(); 
-        document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => {
-            btn.textContent = 'Adicionar ao Carrinho';
-            btn.disabled = false;
-        });
-        fecharModalCarrinho(); 
-    }
+function handleEnviarPedido() { 
+    const cart = getCart(); if (cart.length === 0){ alert('Seu carrinho está vazio.'); return; } const lines = cart.map(p => `${p.nome} - ${formatPrice(p.preco)}`); const msg = `Olá! Gostaria de comprar os seguintes itens:\n${lines.join('\n')}`; const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`; window.open(wa, '_blank');
+    if (confirm("Pedido enviado! Deseja limpar o carrinho?")) { saveCart([]); updateCartButtonText(); document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => { btn.textContent = 'Adicionar ao Carrinho'; btn.disabled = false; }); fecharModalCarrinho(); }
 }
 
 // ===================================
 // LÓGICA DE CARREGAMENTO DA PLANILHA
 // ===================================
-
-async function fetchSheetJson(sheetId, gid = 0) {
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
-    const res = await fetch(url);
-    const txt = await res.text();
-    const start = txt.indexOf('(');
-    const end = txt.lastIndexOf(')');
-    const jsonStr = txt.substring(start + 1, end);
-    return JSON.parse(jsonStr);
-}
-
-function mapRowToProduct(row, headers) { /* ... (código como antes) ... */ 
+async function fetchSheetJson(sheetId, gid = 0) { const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`; const res = await fetch(url); const txt = await res.text(); const start = txt.indexOf('('); const end = txt.lastIndexOf(')'); const jsonStr = txt.substring(start + 1, end); return JSON.parse(jsonStr); }
+function mapRowToProduct(row, headers) { 
     const obj = { images: [] };
     headers.forEach((h, i) => {
-        const cell = row[i];
-        const val = cell && cell.v !== undefined ? cell.v : "";
-        const header = (h || "").toString().trim().toLowerCase();
+        const cell = row[i]; const val = cell && cell.v !== undefined ? cell.v : ""; const header = (h || "").toString().trim().toLowerCase();
         if (header.match(/^id$/)) obj.id = val;
         else if (header.match(/nome|name|produto/)) obj.nome = val;
         else if (header.match(/pre[cç]o[ \-]?oferta/)) { if (typeof val === "number") { obj.precoOferta = val; } else { const cleaned = String(val).replace(/[R$\s.]/g, "").replace(",", "."); const n = parseFloat(cleaned); if (!isNaN(n) && n > 0) { obj.precoOferta = n; } } }
@@ -125,217 +70,86 @@ function mapRowToProduct(row, headers) { /* ... (código como antes) ... */
     if (obj.precoOferta !== undefined && obj.precoOferta < obj.preco) { obj.precoOriginal = obj.preco; obj.preco = obj.precoOferta; obj.oferta = true; }
     return obj;
 }
-
-function parseGvizResponse(resp) {
-    const cols = resp.table.cols.map(c => c.label || c.id || "");
-    const rows = resp.table.rows || [];
-    const produtos = rows.map(r => mapRowToProduct(r.c, cols));
-    produtos.forEach(p => {
-        allProducts.set(p.id, p);
-        if (!dynamicCategories.has(p.categoria)) {
-            dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null });
-        }
-        const catData = dynamicCategories.get(p.categoria);
-        if (p.tipo) catData.tipos.add(p.tipo);
-        if (p.genero) catData.generos.add(p.genero);
-    });
+function parseGvizResponse(resp) { 
+    const cols = resp.table.cols.map(c => c.label || c.id || ""); const rows = resp.table.rows || []; const produtos = rows.map(r => mapRowToProduct(r.c, cols));
+    produtos.forEach(p => { allProducts.set(p.id, p); if (!dynamicCategories.has(p.categoria)) { dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null }); } const catData = dynamicCategories.get(p.categoria); if (p.tipo) catData.tipos.add(p.tipo); if (p.genero) catData.generos.add(p.genero); });
     return produtos;
 }
-
-function popularDropdown(selectElement, optionsSet, placeholder) {
-    selectElement.innerHTML = `<option value="">${placeholder}</option>`;
-    Array.from(optionsSet).sort().forEach(option => {
-        const opt = document.createElement('option');
-        opt.value = option;
-        opt.textContent = option.charAt(0).toUpperCase() + option.slice(1);
-        selectElement.appendChild(opt);
-    });
+function popularDropdown(selectElement, optionsSet, placeholder) { 
+    selectElement.innerHTML = `<option value="">${placeholder}</option>`; Array.from(optionsSet).sort().forEach(option => { const opt = document.createElement('option'); opt.value = option; opt.textContent = option.charAt(0).toUpperCase() + option.slice(1); selectElement.appendChild(opt); });
 }
-
-/**
- * --- NOVO: Cria Checkboxes para o filtro de Tipo ---
- */
-function criarCheckboxesTipo(containerElement, tiposSet) {
-    vazioElemento(containerElement); // Limpa checkboxes antigos
-    
-    // Adiciona o título de volta
-    const titleSpan = document.createElement('span');
-    titleSpan.className = 'checkboxes-title';
-    titleSpan.textContent = 'Tipos:';
-    containerElement.appendChild(titleSpan);
-
-    Array.from(tiposSet).sort().forEach(tipo => {
-        const label = document.createElement('label');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = tipo;
-        checkbox.addEventListener('change', filtrarEExibirProdutos); // Filtro instantâneo
-
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(` ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`));
-        containerElement.appendChild(label);
-    });
+function criarCheckboxesTipo(containerElement, tiposSet) { 
+    vazioElemento(containerElement); const titleSpan = document.createElement('span'); titleSpan.className = 'checkboxes-title'; titleSpan.textContent = 'Tipos:'; containerElement.appendChild(titleSpan);
+    Array.from(tiposSet).sort().forEach(tipo => { const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = tipo; checkbox.addEventListener('change', filtrarEExibirProdutos); label.appendChild(checkbox); label.appendChild(document.createTextNode(` ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`)); containerElement.appendChild(label); });
 }
-
-
-function criarSecoesCategorias(mainElement, navElement) { /* ... (código como antes) ... */ 
-    const navOfertas = document.createElement('a');
-    navOfertas.href = "#secao-ofertas";
-    navOfertas.textContent = "Ofertas";
-    navElement.appendChild(navOfertas);
-
+function criarSecoesCategorias(mainElement, navElement) { 
+    const navOfertas = document.createElement('a'); navOfertas.href = "#secao-ofertas"; navOfertas.textContent = "Ofertas"; navElement.appendChild(navOfertas);
     const categoriasOrdenadas = Array.from(dynamicCategories.keys()).sort();
-    
-    for (const categoria of categoriasOrdenadas) {
-        const catData = dynamicCategories.get(categoria);
-        const nomeCategoria = categoria.charAt(0).toUpperCase() + categoria.slice(1);
-        
-        const navLink = document.createElement('a');
-        navLink.href = `#${catData.sectionId}`;
-        navLink.textContent = nomeCategoria;
-        navElement.appendChild(navLink);
-        
-        const sectionEl = document.createElement('div');
-        sectionEl.id = catData.sectionId;
-        sectionEl.className = 'secao-categoria';
-        
-        const titleEl = document.createElement('h2');
-        titleEl.className = 'titulo-secao';
-        titleEl.textContent = nomeCategoria;
-        
-        const containerEl = document.createElement('div');
-        containerEl.className = 'container';
-        containerEl.id = catData.containerId;
-        
-        sectionEl.appendChild(titleEl);
-        sectionEl.appendChild(containerEl);
-        mainElement.appendChild(sectionEl);
-        
-        catData.sectionEl = sectionEl;
-        catData.containerEl = containerEl;
-    }
+    for (const categoria of categoriasOrdenadas) { const catData = dynamicCategories.get(categoria); const nomeCategoria = categoria.charAt(0).toUpperCase() + categoria.slice(1); const navLink = document.createElement('a'); navLink.href = `#${catData.sectionId}`; navLink.textContent = nomeCategoria; navElement.appendChild(navLink); const sectionEl = document.createElement('div'); sectionEl.id = catData.sectionId; sectionEl.className = 'secao-categoria'; const titleEl = document.createElement('h2'); titleEl.className = 'titulo-secao'; titleEl.textContent = nomeCategoria; const containerEl = document.createElement('div'); containerEl.className = 'container'; containerEl.id = catData.containerId; sectionEl.appendChild(titleEl); sectionEl.appendChild(containerEl); mainElement.appendChild(sectionEl); catData.sectionEl = sectionEl; catData.containerEl = containerEl; }
 }
 
 // ===================================
 // RENDERIZAÇÃO DE CARDS E TIMERS
 // ===================================
-
-function criarCardHTML(p) { /* ... (código como antes) ... */ 
-    const placeholder = "https://via.placeholder.com/800x800?text=Sem+Imagem";
-    const images = p.images && p.images.length ? p.images : [placeholder];
-    const mainImg = images[0];
-    const thumbnails = images.slice(0, 4); 
-    const thumbsHTML = thumbnails.map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`).join('');
-    const precoFmt = formatPrice(p.preco); 
-    const precoOriginalFmt = p.precoOriginal ? `<span class="preco-original">${formatPrice(p.precoOriginal)}</span>` : '';
-    const linkDetalhe = `detalhe.html?data=${encodeURIComponent(JSON.stringify(p))}`;
-    const badgeHTML = p.destaque ? `<div class="card-badge">${escapeHtml(p.destaque)}</div>` : '';
-    const timerHTML = p.dataOferta ? `<div class="card-timer" id="timer-${p.id}"></div>` : '';
-    const cart = getCart();
-    const isInCart = cart.find(item => item.id.toString() === p.id.toString());
-    const btnText = isInCart ? '✅ Já no carrinho' : 'Adicionar ao Carrinho';
-    const btnDisabled = isInCart ? 'disabled' : '';
-    const template = document.createElement('div');
-    template.className = "card";
-    template.innerHTML = `${badgeHTML}${timerHTML}<div class="card-img-main"><a href="${linkDetalhe}"><img src="${escapeHtml(mainImg)}" alt="${escapeHtml(p.nome)}" loading="lazy" class="card-img-main-pic"></a></div><div class="card-img-thumbs">${thumbsHTML}</div><h3>${escapeHtml(p.nome)}</h3><p class="preco-container">${precoOriginalFmt}<span class="preco-atual">${precoFmt}</span></p><button class="btn-add-cart" data-id="${escapeHtml(p.id)}" ${btnDisabled}>${btnText}</button>`;
-    return template;
+function criarCardHTML(p) { 
+    const placeholder = "https://via.placeholder.com/800x800?text=Sem+Imagem"; const images = p.images && p.images.length ? p.images : [placeholder]; const mainImg = images[0]; const thumbnails = images.slice(0, 4); const thumbsHTML = thumbnails.map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`).join(''); const precoFmt = formatPrice(p.preco); const precoOriginalFmt = p.precoOriginal ? `<span class="preco-original">${formatPrice(p.precoOriginal)}</span>` : ''; const linkDetalhe = `detalhe.html?data=${encodeURIComponent(JSON.stringify(p))}`; const badgeHTML = p.destaque ? `<div class="card-badge">${escapeHtml(p.destaque)}</div>` : ''; const timerHTML = p.dataOferta ? `<div class="card-timer" id="timer-${p.id}"></div>` : ''; const cart = getCart(); const isInCart = cart.find(item => item.id.toString() === p.id.toString()); const btnText = isInCart ? '✅ Já no carrinho' : 'Adicionar ao Carrinho'; const btnDisabled = isInCart ? 'disabled' : ''; const template = document.createElement('div'); template.className = "card"; template.innerHTML = `${badgeHTML}${timerHTML}<div class="card-img-main"><a href="${linkDetalhe}"><img src="${escapeHtml(mainImg)}" alt="${escapeHtml(p.nome)}" loading="lazy" class="card-img-main-pic"></a></div><div class="card-img-thumbs">${thumbsHTML}</div><h3>${escapeHtml(p.nome)}</h3><p class="preco-container">${precoOriginalFmt}<span class="preco-atual">${precoFmt}</span></p><button class="btn-add-cart" data-id="${escapeHtml(p.id)}" ${btnDisabled}>${btnText}</button>`; return template;
 }
-
 function escapeHtml(str){ if(!str && str !== 0) return ""; return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
 function vazioElemento(el){ while(el.firstChild) el.removeChild(el.firstChild); }
 function mostrarMensagemNoContainer(container, msg){ vazioElemento(container); const div = document.createElement('div'); div.style.padding = '18px'; div.style.textAlign = 'center'; div.style.color = '#6b7280'; div.textContent = msg; container.appendChild(div); }
 function clearTimers(containerId) { if (activeTimers[containerId]) { activeTimers[containerId].forEach(intervalId => clearInterval(intervalId)); } activeTimers[containerId] = []; }
-function iniciarContadores(produtos, containerId) { /* ... (código como antes) ... */ 
-    clearTimers(containerId);
-    produtos.forEach(p => {
-        if (!p.dataOferta) return; 
-        const timerEl = document.getElementById(`timer-${p.id}`);
-        if (!timerEl) return; 
-        const [dia, mes, anoStr] = p.dataOferta.split('/');
-        if (!dia || !mes || !anoStr) { console.warn(`Data de oferta inválida para ${p.nome}: ${p.dataOferta}`); return; }
-        const hora = p.horaOferta ? parseInt(p.horaOferta, 10) : 23; 
-        const minutos = p.horaOferta ? 0 : 59; 
-        const segundos = p.horaOferta ? 0 : 59; 
-        let anoNum = parseInt(anoStr, 10);
-        if (anoStr.length === 2) anoNum += 2000;
-        const targetDate = new Date(anoNum, mes - 1, dia, hora, minutos, segundos);
-        const intervalId = setInterval(() => {
-            const agora = new Date().getTime();
-            const diff = targetDate.getTime() - agora;
-            if (diff <= 0) { clearInterval(intervalId); timerEl.style.display = 'none'; return; }
-            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((diff % (1000 * 60)) / 1000);
-            timerEl.innerHTML = `${d}d ${h}h ${m}m ${s}s`;
-        }, 1000);
-        if (!activeTimers[containerId]) activeTimers[containerId] = [];
-        activeTimers[containerId].push(intervalId);
-    });
+function iniciarContadores(produtos, containerId) { 
+    clearTimers(containerId); produtos.forEach(p => { if (!p.dataOferta) return; const timerEl = document.getElementById(`timer-${p.id}`); if (!timerEl) return; const [dia, mes, anoStr] = p.dataOferta.split('/'); if (!dia || !mes || !anoStr) { console.warn(`Data de oferta inválida para ${p.nome}: ${p.dataOferta}`); return; } const hora = p.horaOferta ? parseInt(p.horaOferta, 10) : 23; const minutos = p.horaOferta ? 0 : 59; const segundos = p.horaOferta ? 0 : 59; let anoNum = parseInt(anoStr, 10); if (anoStr.length === 2) anoNum += 2000; const targetDate = new Date(anoNum, mes - 1, dia, hora, minutos, segundos); const intervalId = setInterval(() => { const agora = new Date().getTime(); const diff = targetDate.getTime() - agora; if (diff <= 0) { clearInterval(intervalId); timerEl.style.display = 'none'; return; } const d = Math.floor(diff / (1000 * 60 * 60 * 24)); const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)); const s = Math.floor((diff % (1000 * 60)) / 1000); timerEl.innerHTML = `${d}d ${h}h ${m}m ${s}s`; }, 1000); if (!activeTimers[containerId]) activeTimers[containerId] = []; activeTimers[containerId].push(intervalId); });
 }
-
-function criarCardsEAdicionar(container, produtos){
-    vazioElemento(container);
-    if(!produtos || produtos.length === 0){
-        mostrarMensagemNoContainer(container, 'Nenhum produto encontrado.');
-        return;
-    }
-    produtos.forEach(p => {
-        const card = criarCardHTML(p);
-        container.appendChild(card);
-    });
-    iniciarContadores(produtos, container.id);
+function criarCardsEAdicionar(container, produtos){ 
+    vazioElemento(container); if(!produtos || produtos.length === 0){ mostrarMensagemNoContainer(container, 'Nenhum produto encontrado.'); return; } produtos.forEach(p => { const card = criarCardHTML(p); container.appendChild(card); }); iniciarContadores(produtos, container.id);
 }
+function filtrarLista(produtos, { categoria = '', genero = '', tipos = [], precoMin = 0, precoMax = Infinity } = {}){ 
+    return produtos.filter(p => { if(categoria && p.categoria !== categoria) return false; if(genero && String(p.genero || '').toLowerCase() !== String(genero || '').toLowerCase()) return false; if(tipos.length > 0 && !tipos.includes(String(p.tipo || '').toLowerCase())) return false; const preco = Number(p.preco || 0); if(!isNaN(precoMin) && preco < precoMin) return false; if(!isNaN(precoMax) && preco > precoMax) return false; return true; });
+}
+function adicionarClickHandlerMiniaturas(e) { if (e.target.classList.contains('card-thumb')) { e.preventDefault(); const card = e.target.closest('.card'); if (card) { const mainImg = card.querySelector('.card-img-main-pic'); if (mainImg) mainImg.src = e.target.src; } } }
 
 /**
- * --- ATUALIZADO (REQ 2 - Multi-Select Tipo) ---
- * Filtra a lista com base nos novos filtros unificados
+ * --- CORRIGIDO (BUG ADICIONAR OFERTA) ---
+ * Atualiza TODOS os botões correspondentes ao produto.
  */
-function filtrarLista(produtos, { categoria = '', genero = '', tipos = [], precoMin = 0, precoMax = Infinity } = {}){
-    return produtos.filter(p => {
-        // Categoria Principal
-        if(categoria && p.categoria !== categoria) return false;
-        // Gênero
-        if(genero && String(p.genero || '').toLowerCase() !== String(genero || '').toLowerCase()) return false;
-        // Tipo (Sub-categoria) - Verifica se p.tipo está na lista de tipos selecionados
-        if(tipos.length > 0 && !tipos.includes(String(p.tipo || '').toLowerCase())) return false;
-        // Preço
-        const preco = Number(p.preco || 0);
-        if(!isNaN(precoMin) && preco < precoMin) return false;
-        if(!isNaN(precoMax) && preco > precoMax) return false;
-        return true;
-    });
-}
-
-
-function adicionarClickHandlerMiniaturas(e) {
-    if (e.target.classList.contains('card-thumb')) {
-      e.preventDefault(); 
-      const card = e.target.closest('.card');
-      if (card) {
-        const mainImg = card.querySelector('.card-img-main-pic');
-        if (mainImg) mainImg.src = e.target.src;
-      }
-    }
-}
-
-function handleAddToCartClick(e) { /* ... (código como antes) ... */ 
+function handleAddToCartClick(e) {
     if (!e.target.classList.contains('btn-add-cart')) return;
-    const btn = e.target; const productId = btn.dataset.id; const product = allProducts.get(productId);
+    
+    const btnClicked = e.target; // O botão que foi clicado
+    const productId = btnClicked.dataset.id;
+    const product = allProducts.get(productId);
+    
     if (!product) return;
-    const cart = getCart(); if (cart.find(p => p.id === product.id)) return;
+
+    const cart = getCart();
+    // Previne adicionar duas vezes (embora o botão já deva estar desabilitado)
+    if (cart.find(p => p.id === product.id)) return;
+    
+    // Adiciona ao carrinho e salva
     cart.push({ id: product.id, nome: product.nome, preco: product.preco });
-    saveCart(cart); updateCartButtonText();
-    btn.textContent = '✅ Adicionado!'; btn.disabled = true;
+    saveCart(cart);
+    updateCartButtonText(); // Atualiza botão do footer
+    
+    // --- CORREÇÃO AQUI ---
+    // Encontra TODOS os botões com o mesmo data-id
+    const cardBtns = document.querySelectorAll(`.btn-add-cart[data-id="${productId}"]`); 
+    // Itera e atualiza cada um deles
+    cardBtns.forEach(button => {
+        if (button) {
+            button.textContent = '✅ Adicionado!';
+            button.disabled = true;
+        }
+    });
+    // --- FIM DA CORREÇÃO ---
 }
+
 
 // ===================================
-// --- NOVA FUNÇÃO PRINCIPAL DE FILTRAGEM E EXIBIÇÃO ---
+// FUNÇÃO PRINCIPAL DE FILTRAGEM E EXIBIÇÃO
 // ===================================
 function filtrarEExibirProdutos() {
-    console.log("Filtrando..."); // Para debug
-
-    // 1. Ler todos os valores atuais dos filtros
+    console.log("Filtrando..."); 
     const filtroCategoriaEl = document.getElementById('filtroCategoria');
     const filtroGeneroEl = document.getElementById('filtroGenero');
     const filtroTipoContainerEl = document.getElementById('filtroTipoContainer');
@@ -348,203 +162,84 @@ function filtrarEExibirProdutos() {
     const generoSelecionado = filtroGeneroEl.value;
     const precoMinValor = precoMinEl.value ? Number(precoMinEl.value) : 0;
     const precoMaxValor = precoMaxEl.value ? Number(precoMaxEl.value) : Infinity;
-    
-    // Ler tipos selecionados (checkboxes)
     const tiposSelecionados = [];
     const checkboxesTipo = filtroTipoContainerEl.querySelectorAll('input[type="checkbox"]:checked');
     checkboxesTipo.forEach(cb => tiposSelecionados.push(cb.value));
 
-    const filtros = {
-      categoria: categoriaSelecionada,
-      genero: generoSelecionado,
-      tipos: tiposSelecionados, // Passa o array de tipos
-      precoMin: precoMinValor,
-      precoMax: precoMaxValor,
-    };
-
-    // 2. Filtra a lista completa de produtos (do Map global)
+    const filtros = { categoria: categoriaSelecionada, genero: generoSelecionado, tipos: tiposSelecionados, precoMin: precoMinValor, precoMax: precoMaxValor };
     const todosProdutosArray = Array.from(allProducts.values());
     const produtosFiltrados = filtrarLista(todosProdutosArray, filtros);
     
-    // 3. Mostra/Esconde as seções de categoria
-    secaoOfertasEl.style.display = 'block'; // Ofertas sempre visíveis
+    secaoOfertasEl.style.display = 'block'; 
     for (const [categoria, catData] of dynamicCategories.entries()) {
-      if (filtros.categoria && categoria !== filtros.categoria) {
-        catData.sectionEl.style.display = 'none'; // Esconde seção se não for a selecionada
-      } else {
-        catData.sectionEl.style.display = 'block'; // Mostra seção
-      }
+        catData.sectionEl.style.display = (filtros.categoria && categoria !== filtros.categoria) ? 'none' : 'block';
     }
 
-    // 4. Ordena e Renderiza cada seção
-    
-    // Ofertas
     let ofertasFiltradas = produtosFiltrados.filter(p => p.oferta);
-    if (currentSortOrder === 'priceAsc') {
-        ofertasFiltradas.sort((a, b) => a.preco - b.preco);
-    } else if (currentSortOrder === 'priceDesc') {
-        ofertasFiltradas.sort((a, b) => b.preco - a.preco);
-    }
+    if (currentSortOrder === 'priceAsc') ofertasFiltradas.sort((a, b) => a.preco - b.preco);
+    else if (currentSortOrder === 'priceDesc') ofertasFiltradas.sort((a, b) => b.preco - a.preco);
     criarCardsEAdicionar(listaOfertasEl, ofertasFiltradas);
     
-    // Categorias Dinâmicas
     for (const [categoria, catData] of dynamicCategories.entries()) {
-      // Pega só os produtos dessa categoria DENTRO dos já filtrados
       let produtosDaCategoriaFiltrados = produtosFiltrados.filter(p => p.categoria === categoria);
-      
-      // Aplica ordenação
-      if (currentSortOrder === 'priceAsc') {
-          produtosDaCategoriaFiltrados.sort((a, b) => a.preco - b.preco);
-      } else if (currentSortOrder === 'priceDesc') {
-          produtosDaCategoriaFiltrados.sort((a, b) => b.preco - a.preco);
-      }
-      
-      // Renderiza
+      if (currentSortOrder === 'priceAsc') produtosDaCategoriaFiltrados.sort((a, b) => a.preco - b.preco);
+      else if (currentSortOrder === 'priceDesc') produtosDaCategoriaFiltrados.sort((a, b) => b.preco - a.preco);
       criarCardsEAdicionar(catData.containerEl, produtosDaCategoriaFiltrados);
     }
 
-    // 5. Atualiza estilo dos botões de ordenação
     document.getElementById('sortAsc').classList.toggle('active', currentSortOrder === 'priceAsc');
     document.getElementById('sortDesc').classList.toggle('active', currentSortOrder === 'priceDesc');
 }
 
-
 // ===================================
 // FUNÇÃO PRINCIPAL (INICIALIZAÇÃO)
 // ===================================
-
 async function loadAndRender(){
   const mainElement = document.querySelector('main');
   const navElement = document.getElementById('menuNavegacao');
   const listaOfertasEl = document.getElementById('listaOfertas');
-  const secaoOfertasEl = document.getElementById('secao-ofertas');
-  
-  // Seletores de Filtro
   const filtroCategoria = document.getElementById('filtroCategoria');
   const filtroGenero = document.getElementById('filtroGenero');
-  const filtroTipoContainer = document.getElementById('filtroTipoContainer'); // Container dos checkboxes
+  const filtroTipoContainer = document.getElementById('filtroTipoContainer'); 
   const precoMin = document.getElementById('precoMin');
   const precoMax = document.getElementById('precoMax');
   const btnLimparFiltros = document.getElementById('limparFiltros');
   const btnSortAsc = document.getElementById('sortAsc');
   const btnSortDesc = document.getElementById('sortDesc');
   
-  let produtos = []; // Array temporário para carregar
+  let produtos = []; 
 
   try{
-    const resp = await fetchSheetJson(SHEET_ID, GID);
-    produtos = parseGvizResponse(resp); 
-    console.log('Dados carregados (gviz):', produtos.length, 'produtos');
+    const resp = await fetchSheetJson(SHEET_ID, GID); produtos = parseGvizResponse(resp); console.log('Dados carregados (gviz):', produtos.length, 'produtos');
   }catch(err){
     console.warn('Falha ao carregar via gviz, tentando fallback opensheet:', err);
     try{
-      const opensheetUrl = `https://opensheet.elk.sh/${SHEET_ID}/Página1`; 
-      const r = await fetch(opensheetUrl);
-      if (!r.ok) throw new Error(`OpenSheet falhou com status ${r.status}`);
-      const arr = await r.json();
-      produtos = arr.map(obj => { /* ... (código map como antes) ... */ 
-          const headers = Object.keys(obj);
-          const row = headers.map(h => ({ v: obj[h] }));
-          return mapRowToProduct(row, headers);
-      });
-      produtos.forEach(p => { /* ... (código populate como antes) ... */ 
-          allProducts.set(p.id, p);
-          if (!dynamicCategories.has(p.categoria)) {
-              dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null });
-          }
-          const catData = dynamicCategories.get(p.categoria);
-          if (p.tipo) catData.tipos.add(p.tipo);
-          if (p.genero) catData.generos.add(p.genero);
-      });
+      const opensheetUrl = `https://opensheet.elk.sh/${SHEET_ID}/Página1`; const r = await fetch(opensheetUrl); if (!r.ok) throw new Error(`OpenSheet falhou com status ${r.status}`); const arr = await r.json();
+      produtos = arr.map(obj => { const headers = Object.keys(obj); const row = headers.map(h => ({ v: obj[h] })); return mapRowToProduct(row, headers); });
+      produtos.forEach(p => { allProducts.set(p.id, p); if (!dynamicCategories.has(p.categoria)) { dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null }); } const catData = dynamicCategories.get(p.categoria); if (p.tipo) catData.tipos.add(p.tipo); if (p.genero) catData.generos.add(p.genero); });
       console.log('Dados carregados (opensheet):', produtos.length, 'produtos');
-    }catch(err2){
-      console.error('Erro ao carregar planilha pelo fallback:', err2);
-      mostrarMensagemNoContainer(listaOfertasEl, 'Erro ao carregar produtos. Verifique o console.');
-      return;
-    }
+    }catch(err2){ console.error('Erro ao carregar planilha pelo fallback:', err2); mostrarMensagemNoContainer(listaOfertasEl, 'Erro ao carregar produtos. Verifique o console.'); return; }
   }
 
-  // --- RENDERIZAÇÃO INICIAL DINÂMICA ---
   criarSecoesCategorias(mainElement, navElement);
   popularDropdown(filtroCategoria, dynamicCategories.keys(), "Todas as Categorias");
-  filtrarEExibirProdutos(); // Chama a função principal para a renderização inicial
+  filtrarEExibirProdutos(); 
   updateCartButtonText(); 
 
-  // --- NOVA LÓGICA DE FILTROS ---
-
-  // 1. Listener para Categoria Principal (mostrar/esconder filtros)
+  // --- LISTENERS ---
   filtroCategoria.addEventListener('change', (e) => {
-    const categoria = e.target.value;
-    
-    // Reseta e esconde filtros secundários
-    filtroGenero.value = "";
-    filtroGenero.style.display = 'none';
-    vazioElemento(filtroTipoContainer); // Limpa checkboxes
-    filtroTipoContainer.style.display = 'none';
-    
-    if (categoria) {
-      const catData = dynamicCategories.get(categoria);
-      if (catData) {
-        if (catData.generos.size > 0) {
-          popularDropdown(filtroGenero, catData.generos, "Todos os Gêneros");
-          filtroGenero.style.display = 'block';
-        }
-        if (catData.tipos.size > 0) {
-          criarCheckboxesTipo(filtroTipoContainer, catData.tipos);
-          filtroTipoContainer.style.display = 'flex';
-        }
-      }
-    }
-    // Dispara a filtragem ao mudar a categoria principal
+    const categoria = e.target.value; filtroGenero.value = ""; filtroGenero.style.display = 'none'; vazioElemento(filtroTipoContainer); filtroTipoContainer.style.display = 'none';
+    if (categoria) { const catData = dynamicCategories.get(categoria); if (catData) { if (catData.generos.size > 0) { popularDropdown(filtroGenero, catData.generos, "Todos os Gêneros"); filtroGenero.style.display = 'block'; } if (catData.tipos.size > 0) { criarCheckboxesTipo(filtroTipoContainer, catData.tipos); filtroTipoContainer.style.display = 'flex'; } } }
     filtrarEExibirProdutos(); 
   });
-
-  // 2. Listeners para Gênero e Preço (disparam filtragem instantânea)
   filtroGenero.addEventListener('change', filtrarEExibirProdutos);
-  precoMin.addEventListener('input', filtrarEExibirProdutos); // 'input' é mais responsivo que 'change'
+  precoMin.addEventListener('input', filtrarEExibirProdutos); 
   precoMax.addEventListener('input', filtrarEExibirProdutos);
-
-  // NOTA: Listeners para os checkboxes de Tipo são adicionados DENTRO de criarCheckboxesTipo
-
-  // 3. Listeners para Ordenação
-  btnSortAsc.addEventListener('click', () => {
-      currentSortOrder = 'priceAsc';
-      filtrarEExibirProdutos();
-  });
-  btnSortDesc.addEventListener('click', () => {
-      currentSortOrder = 'priceDesc';
-      filtrarEExibirProdutos();
-  });
-
-  // 4. Listener para Limpar Filtros
-  btnLimparFiltros.addEventListener('click', () => {
-    filtroCategoria.value = "";
-    filtroGenero.value = "";
-    vazioElemento(filtroTipoContainer); // Limpa checkboxes
-    precoMin.value = "";
-    precoMax.value = "";
-    
-    filtroGenero.style.display = 'none';
-    filtroTipoContainer.style.display = 'none';
-    
-    currentSortOrder = 'default'; // Reseta ordenação
-    
-    filtrarEExibirProdutos(); // Re-exibe tudo
-  });
-  
-  
-  // Handlers de Clique nos Cards (Miniaturas e "Adicionar")
-  mainElement.addEventListener('click', (e) => {
-    adicionarClickHandlerMiniaturas(e);
-    handleAddToCartClick(e);
-  });
-  
-  // Handlers do Modal e Botão Principal
-  const btnWhats = document.getElementById('enviarWhatsApp');
-  btnWhats.addEventListener('click', () => {
-    if (getCart().length === 0) { alert('Seu carrinho está vazio.'); return; }
-    abrirModalCarrinho();
-  });
+  btnSortAsc.addEventListener('click', () => { currentSortOrder = 'priceAsc'; filtrarEExibirProdutos(); });
+  btnSortDesc.addEventListener('click', () => { currentSortOrder = 'priceDesc'; filtrarEExibirProdutos(); });
+  btnLimparFiltros.addEventListener('click', () => { filtroCategoria.value = ""; filtroGenero.value = ""; vazioElemento(filtroTipoContainer); precoMin.value = ""; precoMax.value = ""; filtroGenero.style.display = 'none'; filtroTipoContainer.style.display = 'none'; currentSortOrder = 'default'; filtrarEExibirProdutos(); });
+  mainElement.addEventListener('click', (e) => { adicionarClickHandlerMiniaturas(e); handleAddToCartClick(e); });
+  const btnWhats = document.getElementById('enviarWhatsApp'); btnWhats.addEventListener('click', () => { if (getCart().length === 0) { alert('Seu carrinho está vazio.'); return; } abrirModalCarrinho(); });
   document.getElementById('fecharModal').addEventListener('click', fecharModalCarrinho);
   document.getElementById('modalCarrinho').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) { fecharModalCarrinho(); } });
   document.getElementById('listaCarrinhoModal').addEventListener('click', (e) => { if (e.target.classList.contains('remover-item-btn')) { handleRemoverItem(e.target.dataset.id); } });
