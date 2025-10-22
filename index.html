@@ -18,34 +18,16 @@
   <section class="controls">
     <div class="filters-section">
       <h3>Filtros</h3>
-      
       <input type="search" id="filtroPesquisa" placeholder="Pesquisar por nome..." class="filtro-pesquisa">
-      
-      <select id="filtroCategoria">
-        <option value="">Todas as Categorias</option>
-        </select>
-      
-      <select id="filtroGenero" class="filtro-grupo" style="display: none;">
-        <option value="">Todos os Gêneros</option>
-        </select>
-
-      <div id="filtroTipoContainer" class="filtro-grupo checkboxes-container" style="display: none;">
-        <span class="checkboxes-title">Tipos:</span>
-        </div>
-      
+      <select id="filtroCategoria"> <option value="">Todas as Categorias</option> /* Populado */ </select>
+      <select id="filtroGenero" class="filtro-grupo" style="display: none;"> <option value="">Todos os Gêneros</option> /* Populado */ </select>
+      <div id="filtroTipoContainer" class="filtro-grupo checkboxes-container" style="display: none;"> <span class="checkboxes-title">Tipos:</span> /* Checkboxes */ </div>
       <input type="number" id="precoMin" placeholder="Mín. R$" />
       <input type="number" id="precoMax" placeholder="Máx. R$" />
-      
-      <div class="sort-buttons">
-          Ordenar por Preço:
-          <button id="sortAsc">Menor Preço</button>
-          <button id="sortDesc">Maior Preço</button>
-      </div>
-
+      <div class="sort-buttons"> Ordenar por Preço: <button id="sortAsc">Menor Preço</button> <button id="sortDesc">Maior Preço</button> </div>
       <button id="limparFiltros" style="background-color: var(--muted);">Limpar</button>
     </div>
   </section>
-
 
   <main>
     <div id="secao-ofertas">
