@@ -15,7 +15,7 @@ html { scroll-behavior: smooth; }
 body{ margin:0; font-family:Inter, "Segoe UI", Arial, sans-serif; background-color: burlywood; color:#111827; -webkit-font-smoothing:antialiased; }
 header{ background:#0f1724; color:#fff; padding:0.7rem 1rem; font-size:1.25rem; font-weight:600; letter-spacing:0.4px; position:sticky; top:0; z-index:20; }
 .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
-nav { display: flex; gap: 15px; flex-wrap: wrap; /* Permite quebrar linha */ justify-content: flex-end; /* Alinha links à direita por padrão */ }
+nav { display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-end; }
 nav a { color: #fff; text-decoration: none; font-size: 1rem; font-weight: 500; padding: 5px 10px; border-radius: 6px; transition: background-color 0.2s ease; }
 nav a:hover { background-color: rgba(255, 255, 255, 0.1); }
 
@@ -41,21 +41,42 @@ button{ background:var(--accent); color:#fff; border:0; cursor:pointer; }
 /* SEÇÕES E PRODUTOS                   */
 /* =================================== */
 .titulo-secao{ text-align:center; margin:15px 0 6px; color:#0f1724; font-weight:600; }
-#secao-ofertas .titulo-secao { margin-top: 0; padding-top: 15px; }
-#secao-ofertas, .secao-categoria { padding-top: 80px; margin-top: -80px; }
-#secao-ofertas { padding-top: 20px; margin-top: 0; }
+/* Removida regra específica para #secao-ofertas .titulo-secao */
+
+/* --- AJUSTE 1: Espaçamento e Borda ABAIXO das Seções --- */
+#secao-ofertas,
+.secao-categoria {
+  padding-top: 80px; /* Mantém padding para o scroll anchor */
+  margin-top: -80px; /* Mantém compensação do scroll anchor */
+
+  /* Adiciona espaço e borda ABAIXO */
+  padding-bottom: 25px;
+  margin-bottom: 25px; /* Espaço entre a borda e a próxima seção */
+  border-bottom: 2px solid #e0e0e0; /* Borda separadora */
+}
+/* A PRIMEIRA seção precisa do padding original */
+#secao-ofertas {
+  padding-top: 20px;
+  margin-top: 0;
+}
+/* A ÚLTIMA seção não precisa de borda/margem inferior */
+main > div:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+/* --- FIM AJUSTE 1 --- */
+
 .container{
   max-width:1100px;
-  margin:0 auto 10px;
+  margin:0 auto 10px; /* Margem inferior pequena apenas para espaço pós-cards */
   padding:0 16px;
   gap:14px;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start; /* Alinhamento à esquerda no DESKTOP */
+  justify-content: flex-start; /* Alinhamento DESKTOP */
 }
 .loading-message { width: 100%; padding: 40px 20px; text-align: center; font-size: 1.1rem; color: var(--muted); }
 .card{
-  /* Largura DESKTOP (5 colunas) */
   width: calc( (100% - 56px) / 5 );
   background:var(--card);
   border-radius:12px;
@@ -67,7 +88,6 @@ button{ background:var(--accent); color:#fff; border:0; cursor:pointer; }
   gap:8px;
   transition:transform .15s ease, box-shadow .15s ease;
   position: relative;
-  /* Adiciona min-width para evitar que fiquem MUITO estreitos em telas intermediárias */
   min-width: 180px;
 }
 .card:hover{ transform:translateY(-4px); box-shadow:0 12px 30px rgba(15,23,42,0.08); }
@@ -148,21 +168,22 @@ footer{ position:sticky; bottom:0; background:var(--card); padding:12px; text-al
 /* =================================== */
 @media (max-width: 600px){
   .header-content { justify-content: center; gap: 10px; }
-  nav { justify-content: center; width: 100%; } /* Não precisa quebrar se os itens forem curtos */
+  nav { justify-content: center; width: 100%; }
   nav a { font-size: 0.9rem; padding: 4px 8px; }
 
-  #secao-ofertas, .secao-categoria { padding-top: 80px; margin-top: -80px; } /* Ajuste para compensar apenas o header */
+  #secao-ofertas, .secao-categoria { padding-top: 110px; margin-top: -110px; }
   #secao-ofertas { padding-top: 20px; margin-top: 0; }
 
   .container {
     gap: 10px;
     padding: 0 10px;
-    justify-content: center; /* Centraliza as duas colunas ou uma, se for muito estreito */
+    /* --- AJUSTE 2: Alinhamento Mobile --- */
+    justify-content: flex-start; /* Alinha à esquerda no mobile */
   }
   .card {
-    width: calc(50% - 5px); /* Força 2 colunas (50% menos metade do gap) */
-    min-width: 140px; /* Evita ficar muito estreito */
-    gap: 4px; /* Espaço interno menor */
+    width: calc(50% - 5px);
+    min-width: 140px;
+    gap: 4px;
   }
   .card-badge, .card-timer { padding: 4px 6px; font-size: 0.7rem; left: 5px; right: auto; width: auto; }
   .card-timer { top: 5px; }
@@ -193,12 +214,15 @@ footer{ position:sticky; bottom:0; background:var(--card); padding:12px; text-al
 }
 
 /* Ajuste para telas muito pequenas, forçando 1 coluna */
-@media (max-width: 340px) { /* Ponto de quebra um pouco maior que 320 */
+@media (max-width: 340px) {
     .container {
-        justify-content: center; /* Centraliza a única coluna */
+        justify-content: center; /* Volta a centralizar com 1 coluna */
     }
     .card {
-        width: 100%; /* Ocupa a largura total */
-        max-width: 240px; /* Mas não maior que o tamanho original */
+        width: 100%;
+        max-width: 240px;
     }
+    /* Ajusta padding do scroll para header mobile + nav quebrada */
+     #secao-ofertas, .secao-categoria { padding-top: 150px; margin-top: -150px; }
+     #secao-ofertas { padding-top: 20px; margin-top: 0; }
 }
