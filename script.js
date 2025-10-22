@@ -1,4 +1,4 @@
-// script.js (ATUALIZADO PARA ESCONDER SEÇÕES VAZIAS PÓS-FILTRO)
+// script.js (ATUALIZADO - REMOVE CONFIRMAÇÃO DE LIMPAR CARRINHO)
 
 // ======= CONFIG =======
 const SHEET_ID = "1gU34_gLsxTHDy_nxhtg91-Ld6VaU4Zba65dBkZD-2aQ";
@@ -38,7 +38,7 @@ function updateCartButtonText() {
 // ===================================
 // FUNÇÕES DO MODAL
 // ===================================
-function abrirModalCarrinho() { /* ... (código como antes) ... */
+function abrirModalCarrinho() {
     const cart = getCart(); const modal = document.getElementById('modalCarrinho'); const modalBody = document.getElementById('listaCarrinhoModal'); const totalEl = document.getElementById('totalCarrinhoModal'); const enviarBtn = document.getElementById('enviarPedidoModal');
     vazioElemento(modalBody);
     if (cart.length === 0) { modalBody.innerHTML = '<p>Seu carrinho está vazio.</p>'; totalEl.textContent = 'Total: R$ 0,00'; enviarBtn.style.display = 'none'; document.getElementById('observacaoPedido').value = ''; }
@@ -61,16 +61,49 @@ function decreaseQuantity(productId) {
     if (itemIndex > -1 && cart[itemIndex].quantity > 1) { cart[itemIndex].quantity--; saveCart(cart); abrirModalCarrinho(); updateCartButtonText(); }
     else if (itemIndex > -1 && cart[itemIndex].quantity === 1) { handleRemoverItem(productId); }
 }
+
+/** --- ATUALIZADO: Remove confirmação e limpa automaticamente --- */
 function handleEnviarPedido() {
-    const cart = getCart(); const observacao = document.getElementById('observacaoPedido').value.trim();
+    const cart = getCart();
+    const observacao = document.getElementById('observacaoPedido').value.trim();
+    const enviarBtn = document.getElementById('enviarPedidoModal'); // Pega o botão
+
     if (cart.length === 0){ alert('Seu carrinho está vazio.'); return; }
+
+    // Desabilita o botão imediatamente
+    enviarBtn.disabled = true;
+    enviarBtn.textContent = 'Abrindo WhatsApp...';
+
     const lines = cart.map(item => { const itemTotal = formatPrice(item.preco * item.quantity); return `${item.quantity}x ${item.nome} (${formatPrice(item.preco)} cada) - ${itemTotal}`; });
     const subTotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0); const subTotalFmt = formatPrice(subTotal);
     let msg = `Olá! Gostaria de fazer o seguinte pedido:\n\n${lines.join('\n')}`; msg += `\n\n*Subtotal: ${subTotalFmt}*`;
     if (observacao) { msg += `\n\n*Observações:* ${observacao}`; }
-    const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`; window.open(wa, '_blank');
-    if (confirm("Pedido enviado! Deseja limpar o carrinho e as observações?")) { saveCart([]); document.getElementById('observacaoPedido').value = ''; updateCartButtonText(); document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => { btn.textContent = 'Adicionar ao Carrinho'; btn.disabled = false; }); fecharModalCarrinho(); }
+    const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+
+    // Abre o WhatsApp
+    window.open(wa, '_blank');
+
+    // --- MUDANÇA AQUI: Limpa o carrinho SEM perguntar ---
+    // Pequeno timeout para dar tempo da janela do WhatsApp abrir antes de limpar tudo
+    setTimeout(() => {
+        console.log("Limpando carrinho após envio...");
+        saveCart([]); // Limpa o carrinho
+        document.getElementById('observacaoPedido').value = ''; // Limpa observação
+        updateCartButtonText(); // Atualiza botão do footer
+        // Reseta todos os botões "Adicionado" dos cards
+        document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => {
+            // Verifica se o botão não é o próprio botão de enviar pedido (caso raro)
+            if (btn.id !== 'enviarPedidoModal') {
+                 btn.textContent = 'Adicionar ao Carrinho';
+                 btn.disabled = false;
+            }
+        });
+        fecharModalCarrinho(); // Fecha o modal
+        // Não precisa reabilitar o botão enviarBtn, pois o modal fecha
+    }, 500); // 0.5 segundos de espera
+    // --- FIM DA MUDANÇA ---
 }
+
 
 // ===================================
 // LÓGICA DE CARREGAMENTO DA PLANILHA
@@ -99,7 +132,8 @@ function criarCheckboxesTipo(containerElement, tiposSet) {
     Array.from(tiposSet).sort().forEach(tipo => { const label = document.createElement('label'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = tipo; checkbox.addEventListener('change', filtrarEExibirProdutos); label.appendChild(checkbox); label.appendChild(document.createTextNode(` ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`)); containerElement.appendChild(label); });
 }
 function criarSecoesCategorias() {
-    vazioElemento(navElement); // Limpa menu antes de recriar
+    vazioElemento(navElement);
+    Array.from(mainElement.querySelectorAll('.secao-categoria')).forEach(el => el.remove());
     const navOfertas = document.createElement('a'); navOfertas.href = "#secao-ofertas"; navOfertas.textContent = "Ofertas"; navElement.appendChild(navOfertas);
     const categoriasOrdenadas = Array.from(dynamicCategories.keys()).sort();
     for (const categoria of categoriasOrdenadas) {
@@ -172,49 +206,37 @@ function filtrarEExibirProdutos() {
     const produtosAtivos = Array.from(allProducts.values());
     const produtosFiltrados = filtrarLista(produtosAtivos, filtros);
 
-    // --- LÓGICA ATUALIZADA PARA ESCONDER SEÇÕES VAZIAS ---
     let algumaOfertaVisivel = false;
-    let categoriasComProdutos = new Set(); // Guarda as categorias que TEM produtos após o filtro
-
-    // Verifica ofertas
     const ofertasFiltradas = produtosFiltrados.filter(p => p.oferta);
     if (ofertasFiltradas.length > 0) {
         algumaOfertaVisivel = true;
-        secaoOfertasEl.style.display = 'block';
-        // Ordena e renderiza ofertas
+        if(secaoOfertasEl) secaoOfertasEl.style.display = 'block';
         if (currentSortOrder === 'priceAsc') ofertasFiltradas.sort((a, b) => a.preco - b.preco);
         else if (currentSortOrder === 'priceDesc') ofertasFiltradas.sort((a, b) => b.preco - a.preco);
         criarCardsEAdicionar(listaOfertasEl, ofertasFiltradas);
     } else {
-        secaoOfertasEl.style.display = 'none'; // Esconde seção de ofertas
+        if(secaoOfertasEl) secaoOfertasEl.style.display = 'none';
     }
 
-    // Verifica categorias dinâmicas
     for (const [categoria, catData] of dynamicCategories.entries()) {
         const produtosDaCategoriaFiltrados = produtosFiltrados.filter(p => p.categoria === categoria);
-
-        // Esconde/Mostra baseado se a categoria principal foi selecionada OU se tem produtos
         const mostrarSecao = (!filtros.categoria || categoria === filtros.categoria);
 
         if (mostrarSecao && produtosDaCategoriaFiltrados.length > 0) {
-            catData.sectionEl.style.display = 'block'; // Mostra seção
-            categoriasComProdutos.add(categoria); // Marca que esta categoria tem produtos
-            // Ordena e renderiza
-            if (currentSortOrder === 'priceAsc') produtosDaCategoriaFiltrados.sort((a, b) => a.preco - b.preco);
-            else if (currentSortOrder === 'priceDesc') produtosDaCategoriaFiltrados.sort((a, b) => b.preco - a.preco);
-            criarCardsEAdicionar(catData.containerEl, produtosDaCategoriaFiltrados);
+            if(catData.sectionEl) catData.sectionEl.style.display = 'block';
+            if(catData.containerEl) {
+                 if (currentSortOrder === 'priceAsc') produtosDaCategoriaFiltrados.sort((a, b) => a.preco - b.preco);
+                 else if (currentSortOrder === 'priceDesc') produtosDaCategoriaFiltrados.sort((a, b) => b.preco - a.preco);
+                 criarCardsEAdicionar(catData.containerEl, produtosDaCategoriaFiltrados);
+            }
         } else {
-            catData.sectionEl.style.display = 'none'; // Esconde seção
+            if(catData.sectionEl) catData.sectionEl.style.display = 'none';
         }
     }
-    // --- FIM DA LÓGICA ---
 
-
-    // Atualiza botões de ordenação
     document.getElementById('sortAsc').classList.toggle('active', currentSortOrder === 'priceAsc');
     document.getElementById('sortDesc').classList.toggle('active', currentSortOrder === 'priceDesc');
 }
-
 
 // ===================================
 // FUNÇÃO PRINCIPAL (INICIALIZAÇÃO)
@@ -223,6 +245,7 @@ async function loadAndRender(){
     mostrarMensagemNoContainer(listaOfertasEl, "Carregando produtos...");
     vazioElemento(navElement);
     Array.from(mainElement.querySelectorAll('.secao-categoria')).forEach(el => el.remove());
+    criarSecoesCategorias(); // Cria seções com estado de carregamento
 
     let produtos = [];
 
@@ -234,22 +257,20 @@ async function loadAndRender(){
             const opensheetUrl = `https://opensheet.elk.sh/${SHEET_ID}/Página1`; const r = await fetch(opensheetUrl); if (!r.ok) throw new Error(`OpenSheet falhou com status ${r.status}`); const arr = await r.json();
             const todosProdutosFallback = arr.map(obj => { const headers = Object.keys(obj); const row = headers.map(h => ({ v: obj[h] })); return mapRowToProduct(row, headers); });
             produtos = todosProdutosFallback.filter(p => p.ativo);
-            allProducts.clear(); dynamicCategories.clear();
-            produtos.forEach(p => { allProducts.set(p.id, p); if (!dynamicCategories.has(p.categoria)) { dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null }); } const catData = dynamicCategories.get(p.categoria); if (p.tipo) catData.tipos.add(p.tipo); if (p.genero) catData.generos.add(p.genero); });
+            allProducts.clear(); dynamicCategories.clear(); // Limpa antes de popular
+            // Repopula dynamicCategories com as referências corretas aos elementos criados
+            produtos.forEach(p => { allProducts.set(p.id, p); if (!dynamicCategories.has(p.categoria)) { dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: document.getElementById(`secao-${p.categoria}`), containerEl: document.getElementById(`lista-${p.categoria}`) }); } const catData = dynamicCategories.get(p.categoria); if (p.tipo) catData.tipos.add(p.tipo); if (p.genero) catData.generos.add(p.genero); });
             console.log('Dados carregados (opensheet):', produtos.length, 'produtos ativos');
         }catch(err2){
             console.error('Erro ao carregar planilha pelo fallback:', err2);
             mostrarMensagemNoContainer(listaOfertasEl, 'Erro ao carregar produtos. Verifique o console.');
-            criarSecoesCategorias(); // Cria seções vazias para mostrar erro
             for(const catData of dynamicCategories.values()){ if(catData.containerEl) mostrarMensagemNoContainer(catData.containerEl, 'Erro ao carregar produtos.'); }
             return;
         }
     }
 
-    // RENDERIZAÇÃO PÓS-CARREGAMENTO
-    criarSecoesCategorias(); // Cria seções e menu
     popularDropdown(filtroCategoria, dynamicCategories.keys(), "Todas as Categorias");
-    filtrarEExibirProdutos(); // Renderiza tudo
+    filtrarEExibirProdutos();
     updateCartButtonText();
 
     // LISTENERS
@@ -266,7 +287,7 @@ async function loadAndRender(){
     btnSortDesc.addEventListener('click', () => { currentSortOrder = 'priceDesc'; filtrarEExibirProdutos(); });
     btnLimparFiltros.addEventListener('click', () => {
         filtroPesquisa.value = ""; filtroCategoria.value = ""; filtroGenero.value = ""; vazioElemento(filtroTipoContainer); precoMin.value = ""; precoMax.value = ""; filtroGenero.style.display = 'none'; filtroTipoContainer.style.display = 'none'; currentSortOrder = 'default';
-        filtrarEExibirProdutos(); // Re-exibe tudo
+        filtrarEExibirProdutos();
     });
     mainElement.addEventListener('click', (e) => { adicionarClickHandlerMiniaturas(e); handleAddToCartClick(e); });
     const btnWhats = document.getElementById('enviarWhatsApp'); btnWhats.addEventListener('click', () => { if (getCart().length === 0) { alert('Seu carrinho está vazio.'); return; } abrirModalCarrinho(); });
@@ -300,7 +321,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAndRender().catch(e => {
         console.error('Erro na inicialização:', e);
         mostrarMensagemNoContainer(listaOfertasEl, 'Erro grave na inicialização. Verifique o console.');
-        if (dynamicCategories.size > 0) { for(const catData of dynamicCategories.values()){ if(catData.containerEl) mostrarMensagemNoContainer(catData.containerEl, 'Erro ao carregar produtos.'); } }
-        else { mainElement.innerHTML = '<div class="loading-message">Erro grave ao carregar. Verifique o console.</div>'; }
+         // Tenta mostrar erro nas seções futuras se já tiverem sido criadas (pouco provável neste ponto)
+         Array.from(mainElement.querySelectorAll('.secao-categoria .container')).forEach(container => {
+             mostrarMensagemNoContainer(container, 'Erro ao carregar produtos.');
+         });
     });
 });
