@@ -1,1 +1,168 @@
-const WHATSAPP_NUMBER="5543999705837";function getCart(){return JSON.parse(localStorage.getItem("leandrinhoCart")||"[]")}function saveCart(e){localStorage.setItem("leandrinhoCart",JSON.stringify(e))}function escapeHtml(e){return e||0===e?String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"):""}function formatPrice(e){return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(e||0)}function renderizarDetalhes(e){const t=document.getElementById("detalheProdutoContainer");if(!e)return void(t.innerHTML="<p>Produto não encontrado.</p>");const a=e.images&&e.images.length?e.images:["https://via.placeholder.com/800x800?text=Sem+Imagem"],n=a[0],o=a.slice(0,4).map((e=>`<img src="${escapeHtml(e)}" alt="Miniatura" class="card-thumb" loading="lazy">`)).join(""),r=formatPrice(e.preco||0),d=e.precoOriginal?`<span class="preco-original">${formatPrice(e.precoOriginal)}</span>`:"",i=e.descricao?escapeHtml(e.descricao):"Nenhuma descrição disponível.",l=getCart().find((t=>t.id.toString()===e.id.toString()&&!t.observacao)),c=l?"✅ Já no carrinho":"Adicionar ao Carrinho";t.innerHTML=`<img src="${escapeHtml(n)}" alt="${escapeHtml(e.nome)}" id="detalhe-img-main"><div class="card-img-thumbs">${o}</div><h1 class="detalhe-nome">${escapeHtml(e.nome)}</h1><div class="detalhe-preco">${d}<span class="preco-atual">${r}</span></div><button class="btn-add-cart detalhe-btn-whats" id="detalheAddCart">${c}</button><div class="detalhe-observacao" style="margin-top:15px;margin-bottom:10px;display:flex;flex-direction:column;"><label for="detalheObs" style="margin-bottom:5px;font-weight:600;">Observação:</label><textarea id="detalheObs" placeholder="Ex: Ajuste de pulseira, embalar para presente..." style="width:100%;min-height:60px;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;"></textarea></div><div class="detalhe-pedido-rapido"><label for="detalheQuantidade">Quantidade:</label><input type="number" id="detalheQuantidade" value="1" min="1"><button id="enviarPedidoDetalhe">Pedir Agora via WhatsApp</button></div><p class="detalhe-descricao">${i}</p>`,adicionarClickHandlerMiniaturasDetalhe(t)}function adicionarClickHandlerMiniaturasDetalhe(e){e.addEventListener("click",(e=>{if(e.target.classList.contains("card-thumb")){e.preventDefault();const t=document.getElementById("detalhe-img-main");t&&(t.src=e.target.src)}}))}function handlePedidoRapido(e){const t=document.getElementById("detalheQuantidade"),a=parseInt(t.value,10);if(isNaN(a)||a<1)return alert("Por favor, insira uma quantidade válida (1 ou mais)."),void(t.value=1);const n=document.getElementById("detalheObs"),o=n?n.value.trim():"",r=o?`\n\nObservação: ${o}`:"",d=formatPrice(e.preco*a),i=`Olá! Gostaria de pedir o seguinte item:\n\n${a}x ${e.nome} - ${d}${r}\n\n(Pedido Rápido)`,l=`https://wa.me/5543999705837?text=${encodeURIComponent(i)}`;window.open(l,"_blank")}document.addEventListener("DOMContentLoaded",(()=>{let e;try{const t=new URLSearchParams(window.location.search).get("data");if(!t)throw new Error("Nenhum dado de produto encontrado na URL.");e=JSON.parse(decodeURIComponent(t)),e.id=e.id.toString(),renderizarDetalhes(e),document.title=`${e.nome||"Detalhes"} - Leandrinho Relógios`;const a=document.getElementById("detalheAddCart");a&&a.addEventListener("click",(()=>{let t=getCart();const n=document.getElementById("detalheObs"),o=n?n.value.trim():"",r=t.findIndex((t=>t.id===e.id&&(t.observacao||"")===o));r>-1?t[r].quantity++:t.push({id:e.id,nome:e.nome,preco:e.preco,quantity:1,observacao:o}),saveCart(t),a.textContent="✅ Adicionado!",a.disabled=!0,o&&alert("Item adicionado com observação!")}));const n=document.getElementById("enviarPedidoDetalhe");n&&n.addEventListener("click",(()=>handlePedidoRapido(e)))}catch(e){console.error("Erro ao carregar detalhes do produto:",e);document.getElementById("detalheProdutoContainer").innerHTML=`<p class="erro">Não foi possível carregar os detalhes do produto. Por favor, tente novamente. ${e.message}</p>`}}));
+// ======================
+// CONFIG - DETALHE.JS
+// ======================
+// ATUALIZADO: Número de WhatsApp igual ao script.js principal
+const WHATSAPP_NUMBER = "5548999609870"; 
+
+// ===================================
+// FUNÇÕES AUXILIARES
+// ===================================
+function getCart() {
+    return JSON.parse(localStorage.getItem("leandrinhoCart") || "[]");
+}
+function saveCart(cart) {
+    localStorage.setItem("leandrinhoCart", JSON.stringify(cart));
+}
+function escapeHtml(str) {
+    if (!str && str !== 0) return "";
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+function formatPrice(price) {
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(price || 0);
+}
+
+// ===================================
+// RENDERIZAÇÃO E LÓGICA DA PÁGINA
+// ===================================
+function renderizarDetalhes(produto) {
+    const container = document.getElementById("detalheProdutoContainer");
+    if (!produto) {
+        container.innerHTML = "<p>Produto não encontrado.</p>";
+        return;
+    }
+
+    const images = produto.images && produto.images.length ? produto.images : ["https://via.placeholder.com/800x800?text=Sem+Imagem"];
+    const mainImg = images[0];
+    const thumbnails = images.slice(0, 4).map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`).join('');
+
+    const precoFmt = formatPrice(produto.preco || 0);
+    const precoOriginalFmt = produto.precoOriginal ? `<span class="preco-original">${formatPrice(produto.precoOriginal)}</span>` : "";
+    
+    const descricaoFmt = produto.descricao ? escapeHtml(produto.descricao) : "Nenhuma descrição disponível.";
+
+    const cart = getCart();
+    // A lógica de observação por item é específica desta página
+    const isInCart = cart.find(item => item.id.toString() === produto.id.toString() && !item.observacao); 
+    const btnText = isInCart ? "✅ Já no carrinho" : "Adicionar ao Carrinho";
+
+    container.innerHTML = `
+        <img src="${escapeHtml(mainImg)}" alt="${escapeHtml(produto.nome)}" id="detalhe-img-main">
+        <div class="card-img-thumbs">${thumbnails}</div>
+        <h1 class="detalhe-nome">${escapeHtml(produto.nome)}</h1>
+        <div class="detalhe-preco">
+            ${precoOriginalFmt}
+            <span class="preco-atual">${precoFmt}</span>
+        </div>
+        
+        <button class="btn-add-cart detalhe-btn-whats" id="detalheAddCart">${btnText}</button>
+        
+        <div class="detalhe-observacao" style="margin-top:15px; margin-bottom:10px; display:flex; flex-direction:column;">
+            <label for="detalheObs" style="margin-bottom:5px; font-weight:600;">Observação:</label>
+            <textarea id="detalheObs" placeholder="Ex: Ajuste de pulseira, embalar para presente..." style="width:100%; min-height:60px; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;"></textarea>
+        </div>
+
+        <div class="detalhe-pedido-rapido">
+            <label for="detalheQuantidade">Quantidade:</label>
+            <input type="number" id="detalheQuantidade" value="1" min="1">
+            <button id="enviarPedidoDetalhe">Pedir Agora via WhatsApp</button>
+        </div>
+        
+        <p class="detalhe-descricao">${descricaoFmt}</p>
+    `;
+
+    adicionarClickHandlerMiniaturasDetalhe(container);
+}
+
+function adicionarClickHandlerMiniaturasDetalhe(container) {
+    container.addEventListener("click", (e => {
+        if (e.target.classList.contains("card-thumb")) {
+            e.preventDefault();
+            const mainImgEl = document.getElementById("detalhe-img-main");
+            if (mainImgEl) mainImgEl.src = e.target.src;
+        }
+    }));
+}
+
+function handlePedidoRapido(produto) {
+    const qtdEl = document.getElementById("detalheQuantidade");
+    const quantidade = parseInt(qtdEl.value, 10);
+    if (isNaN(quantidade) || quantidade < 1) {
+        alert("Por favor, insira uma quantidade válida (1 ou mais).");
+        qtdEl.value = 1;
+        return;
+    }
+    const obsEl = document.getElementById("detalheObs");
+    const observacao = obsEl ? obsEl.value.trim() : "";
+    const obsText = observacao ? `\n\nObservação: ${observacao}` : "";
+    
+    const totalFmt = formatPrice(produto.preco * quantidade);
+    
+    let msg = `Olá! Gostaria de pedir o seguinte item:\n\n`;
+    msg += `${quantidade}x ${produto.nome} - ${totalFmt}${obsText}`;
+    msg += `\n\n(Pedido Rápido)`;
+    
+    // ATUALIZADO: Usando a variável WHATSAPP_NUMBER
+    const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+    window.open(wa, "_blank");
+}
+
+// ===================================
+// INICIALIZAÇÃO DA PÁGINA
+// ===================================
+document.addEventListener("DOMContentLoaded", (() => {
+    let produto;
+    try {
+        const dataParam = new URLSearchParams(window.location.search).get("data");
+        if (!dataParam) throw new Error("Nenhum dado de produto encontrado na URL.");
+        
+        produto = JSON.parse(decodeURIComponent(dataParam));
+        produto.id = produto.id.toString(); // Garante que ID é string
+        
+        renderizarDetalhes(produto);
+        
+        // ATUALIZADO: Título da página
+        document.title = `${produto.nome || "Detalhes"} - Eleven Store`;
+
+        // Listener para "Adicionar ao Carrinho"
+        const btnAddCart = document.getElementById("detalheAddCart");
+        if (btnAddCart) {
+            btnAddCart.addEventListener("click", (() => {
+                let cart = getCart();
+                const obsEl = document.getElementById("detalheObs");
+                const observacao = obsEl ? obsEl.value.trim() : "";
+                
+                // Lógica de adicionar com observação (específica desta página)
+                const existingIndex = cart.findIndex(item => item.id === produto.id && (item.observacao || "") === observacao);
+                
+                if (existingIndex > -1) {
+                    cart[existingIndex].quantity++;
+                } else {
+                    cart.push({
+                        id: produto.id,
+                        nome: produto.nome,
+                        preco: produto.preco,
+                        quantity: 1,
+                        observacao: observacao // Adiciona observação ao item do carrinho
+                    });
+                }
+                saveCart(cart);
+                
+                btnAddCart.textContent = "✅ Adicionado!";
+                btnAddCart.disabled = true;
+                if (observacao) {
+                    alert("Item adicionado com observação!");
+                }
+            }));
+        }
+
+        // Listener para "Pedir Agora"
+        const btnPedidoRapido = document.getElementById("enviarPedidoDetalhe");
+        if (btnPedidoRapido) {
+            btnPedidoRapido.addEventListener("click", (() => handlePedidoRapido(produto)));
+        }
+
+    } catch (err) {
+        console.error("Erro ao carregar detalhes do produto:", err);
+        document.getElementById("detalheProdutoContainer").innerHTML = `<p class="erro">Não foi possível carregar os detalhes do produto. Por favor, tente novamente. ${err.message}</p>`;
+    }
+}));

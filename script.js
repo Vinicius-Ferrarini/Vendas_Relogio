@@ -3,7 +3,7 @@
 // ======= CONFIG =======
 const SHEET_ID = "1gU34_gLsxTHDy_nxhtg91-Ld6VaU4Zba65dBkZD-2aQ";
 const GID = 0;
-const WHATSAPP_NUMBER = "5543999705837";
+const WHATSAPP_NUMBER = "5548999609870";
 // ======================
 
 let activeTimers = {};
