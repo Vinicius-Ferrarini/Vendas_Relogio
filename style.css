@@ -19,9 +19,7 @@ html {
 body {
     margin: 0;
     font-family: Inter, "Segoe UI", Arial, sans-serif;
-    /* Fundo do body é a cor de separação */
     background-color: var(--bg); 
-    
     color: #111827;
     -webkit-font-smoothing: antialiased;
 }
@@ -44,7 +42,6 @@ header {
     max-width: 1100px;
     margin: 0 auto;
 }
-/* AJUSTE DO LOGO (DESKTOP) */
 .header-logo {
     display: block;
 }
@@ -55,7 +52,6 @@ header {
     padding-bottom: 0.5rem;
     padding-top: 0.5rem;
 }
-/* FIM DO AJUSTE DO LOGO */
 nav {
     display: flex;
     gap: 15px;
@@ -184,8 +180,8 @@ button {
     margin-right: auto;
     margin-bottom: 6px; 
     
-    /* Padding padrão (usado por Ofertas) */
-    padding-top: 25px; 
+    /* ATUALIZADO: Padding-top padrão para todos os títulos */
+    padding-top: 20px; 
     padding-bottom: 10px;
     padding-left: 30px;
     padding-right: 30px;
@@ -197,32 +193,24 @@ button {
     border-radius: 30px; 
 }
 
-/* Aplica o espaçador de 80px (para links) APENAS nos títulos de categoria */
-.secao-categoria > .titulo-secao {
-    padding-top: 20px; 
-}
+/* REMOVIDO: Regra .secao-categoria > .titulo-secao (não é mais necessária) */
 
-/* Fundo da seção (sem o padding-top que estava duplicado) */
 #secao-ofertas, .secao-categoria {
     background-color: rgb(53, 52, 51);
     
-    /* padding-top: 80px; <-- REMOVIDO DAQUI */
-    margin-top: -80px;
+    /* ATUALIZADO: Substituído o 'margin-top' negativo pela propriedade moderna */
+    /* Isso diz ao browser "deixe 6.5rem de espaço acima de mim ao rolar para âncora" */
+    scroll-margin-top: 6.5rem; /* 6rem do header + 0.5rem de espaço */
+    
     padding-bottom: 25px;
     margin-bottom: 25px; 
     border-bottom: 4px solid #ffffff; 
 }
-
-/* Seção de Ofertas (sem o padding-top que estava causando o espaço extra) */
 #secao-ofertas {
-    /* padding-top: 20px; <-- REMOVIDO DAQUI */
-    margin-top: 0;
+    /* REMOVIDO: margin-top: 0; (não é mais necessário) */
 }
 
-/* Garante que o título de Ofertas use o padding-top padrão de 25px */
-#secao-ofertas > .titulo-secao {
-    padding-top: 20px; 
-}
+/* REMOVIDO: #secao-ofertas > .titulo-secao (não é mais necessário) */
 
 main > div:last-child {
     margin-bottom: 0;
@@ -237,8 +225,6 @@ main > div:last-child {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
-    
-    /* background-image: url('fundo.jpg');*/
     background-color: #d5d5d5;
     background-size: contain;
     background-repeat: no-repeat;
@@ -711,19 +697,174 @@ footer {
 }
 
 /* =================================== */
+/* CSS ADICIONAL PARA PAGAMENTO E ENDEREÇO */
+/* =================================== */
+.modal-extra-info {
+    padding: 10px 25px;
+    background-color: #f9f9f9;
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.modal-extra-info h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+    color: #333;
+}
+.modal-extra-info select,
+.modal-extra-info input[type="text"],
+.modal-extra-info input[type="tel"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.95rem;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.address-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+.form-group-inline {
+    display: flex;
+    gap: 10px;
+}
+.form-group-inline input {
+    flex: 1;
+}
+.form-group-inline input#enderecoNumero {
+    flex-grow: 1;
+    max-width: 120px;
+}
+.form-group-inline input#enderecoComplemento {
+    flex-grow: 2;
+}
+.cep-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.cep-group input#enderecoCep {
+    flex: 1; 
+}
+.cep-group button#btnBuscarCep {
+    flex-shrink: 0; 
+    background-color: var(--muted);
+    color: white;
+    padding-left: 12px;
+    padding-right: 12px;
+    font-weight: 600;
+}
+.cep-group button#btnBuscarCep:hover {
+    background-color: #555;
+}
+.cep-group button#btnBuscarCep:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+.modal-observacao {
+    padding-top: 20px;
+}
+.item-obs-modal {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+    padding-left: 10px;
+}
+
+/* =================================== */
+/* ESTILOS DO WIZARD (ABAS) */
+/* =================================== */
+.modal-content {
+    overflow: hidden; 
+}
+.wizard-step {
+    display: none; 
+    flex-direction: column;
+    flex: 1; 
+    min-height: 0; 
+}
+.wizard-step.active {
+    display: flex; 
+}
+.wizard-step#wizardStep1 .modal-body {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.wizard-step2-body {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 10px 0;
+}
+.wizard-step2-body .modal-extra-info {
+    padding-left: 25px;
+    padding-right: 25px;
+}
+.wizard-step2-body .modal-observacao {
+    padding-left: 25px;
+    padding-right: 25px;
+    border-top: none; 
+}
+.wizard-step2-body .modal-extra-info {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+.btn-wizard-next {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+}
+.btn-wizard-next:hover {
+    background: #1da453;
+}
+.footer-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+.btn-wizard-prev {
+    padding: 14px 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-radius: 10px;
+    background-color: var(--muted);
+    color: #fff;
+    flex-grow: 0; 
+}
+.btn-wizard-prev:hover {
+    background-color: #555;
+}
+.footer-buttons #enviarPedidoModal {
+    flex-grow: 1; 
+}
+.modal-footer.step-2-footer {
+    align-items: flex-end;
+}
+
+/* =================================== */
 /* RESPONSIVIDADE (AJUSTADO PARA 2 COLUNAS)*/
 /* =================================== */
 @media (max-width: 600px) {
-    /* Ajustes Header/Nav Mobile */
     .header-content {
         justify-content: center;
         gap: 10px;
     }
-    /* AJUSTE DO LOGO (CELULAR) */
     .header-logo img {
         width: 8rem; 
     }
-    /* FIM DO AJUSTE DO LOGO */
     nav {
         justify-content: center;
         width: 100%;
@@ -733,26 +874,13 @@ footer {
         padding: 4px 8px;
     }
     
-    /* Ajuste Scroll Anchor Mobile (REMOVIDO PADDINGS DUPLICADOS) */
+    /* ATUALIZADO: Novo espaçamento de âncora para mobile */
     #secao-ofertas, .secao-categoria {
-        /* padding-top: 110px; <-- REMOVIDO */
-        margin-top: -110px;
-    }
-    #secao-ofertas {
-        /* padding-top: 20px; <-- REMOVIDO */
-        margin-top: 0;
-    }
-    
-    /* Padding do título movido para cá */
-    .secao-categoria > .titulo-secao {
-        padding-top: 110px; /* Mantém o espaçador para o link */
-    }
-    #secao-ofertas > .titulo-secao {
-        padding-top: 20px; /* Restaura padding normal */
+        scroll-margin-top: 8rem; /* Valor ajustado para header mobile */
     }
 
+    /* REMOVIDAS: Regras de margin-top e padding-top das seções e títulos */
 
-    /* Layout 2 Colunas Mobile */
     .container {
         gap: 10px;
         padding: 10px; 
@@ -763,13 +891,10 @@ footer {
         min-width: 140px;
         gap: 4px;
     }
-    /* Ajuste card h3 mobile (para 2 linhas) */
     .card h3 {
         font-size: 0.9rem;
         min-height: 2.4rem; 
     }
-    
-    /* Ajustes Conteúdo Card Mobile */
     .card-badge, .card-timer {
         padding: 4px 6px;
         font-size: 0.7rem;
@@ -814,7 +939,6 @@ footer {
         padding: 8px;
         margin-top: 4px;
     }
-    /* Ajustes Detalhes Mobile */
     .detalhe-container .card-img-thumbs {
         height: 60px;
     }
@@ -845,13 +969,22 @@ footer {
         font-size: 1rem;
         padding: 12px;
     }
-    /* Ajustes Modal Mobile */
     .modal-content {
         max-width: calc(100vw - 30px);
     }
     .modal-header, .modal-body, .modal-observacao, .modal-footer {
         padding-left: 15px;
         padding-right: 15px;
+    }
+    .modal-extra-info {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    .form-group-inline {
+        flex-direction: column;
+    }
+    .form-group-inline input#enderecoNumero {
+        max-width: 100%;
     }
     .cart-item-modal {
         flex-wrap: wrap;
@@ -862,6 +995,18 @@ footer {
     }
     .cart-item-modal-controls {
         margin-right: 0;
+    }
+    
+    .wizard-step2-body .modal-extra-info,
+    .wizard-step2-body .modal-observacao {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    .footer-buttons {
+        flex-direction: column-reverse; 
+    }
+    .btn-wizard-prev {
+        width: 100%;
     }
 }
 
@@ -875,21 +1020,10 @@ footer {
         max-width: 240px;
     }
     
-    /* Ajuste Scroll Anchor Mobile (REMOVIDO PADDINGS DUPLICADOS) */
+    /* ATUALIZADO: Novo espaçamento de âncora para mobile pequeno */
     #secao-ofertas, .secao-categoria {
-        /* padding-top: 150px; <-- REMOVIDO */
-        margin-top: -150px;
+        scroll-margin-top: 10rem; /* Valor ajustado para header mais alto */
     }
-    #secao-ofertas {
-        /* padding-top: 20px; <-- REMOVIDO */
-        margin-top: 0;
-    }
-    
-    /* Padding do título movido para cá */
-    .secao-categoria > .titulo-secao {
-        padding-top: 150px; /* Espaçador para o link */
-    }
-    #secao-ofertas > .titulo-secao {
-        padding-top: 20px; /* Restaura padding normal */
-    }
+
+    /* REMOVIDAS: Regras de margin-top e padding-top */
 }

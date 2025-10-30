@@ -1,7 +1,6 @@
 // ======================
 // CONFIG - DETALHE.JS
 // ======================
-// ATUALIZADO: Número de WhatsApp igual ao script.js principal
 const WHATSAPP_NUMBER = "5548999609870"; 
 
 // ===================================
@@ -41,7 +40,6 @@ function renderizarDetalhes(produto) {
     const descricaoFmt = produto.descricao ? escapeHtml(produto.descricao) : "Nenhuma descrição disponível.";
 
     const cart = getCart();
-    // A lógica de observação por item é específica desta página
     const isInCart = cart.find(item => item.id.toString() === produto.id.toString() && !item.observacao); 
     const btnText = isInCart ? "✅ Já no carrinho" : "Adicionar ao Carrinho";
 
@@ -101,7 +99,6 @@ function handlePedidoRapido(produto) {
     msg += `${quantidade}x ${produto.nome} - ${totalFmt}${obsText}`;
     msg += `\n\n(Pedido Rápido)`;
     
-    // ATUALIZADO: Usando a variável WHATSAPP_NUMBER
     const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
     window.open(wa, "_blank");
 }
@@ -116,11 +113,10 @@ document.addEventListener("DOMContentLoaded", (() => {
         if (!dataParam) throw new Error("Nenhum dado de produto encontrado na URL.");
         
         produto = JSON.parse(decodeURIComponent(dataParam));
-        produto.id = produto.id.toString(); // Garante que ID é string
+        produto.id = produto.id.toString(); 
         
         renderizarDetalhes(produto);
         
-        // ATUALIZADO: Título da página
         document.title = `${produto.nome || "Detalhes"} - Eleven Store`;
 
         // Listener para "Adicionar ao Carrinho"
@@ -131,7 +127,6 @@ document.addEventListener("DOMContentLoaded", (() => {
                 const obsEl = document.getElementById("detalheObs");
                 const observacao = obsEl ? obsEl.value.trim() : "";
                 
-                // Lógica de adicionar com observação (específica desta página)
                 const existingIndex = cart.findIndex(item => item.id === produto.id && (item.observacao || "") === observacao);
                 
                 if (existingIndex > -1) {
@@ -142,7 +137,7 @@ document.addEventListener("DOMContentLoaded", (() => {
                         nome: produto.nome,
                         preco: produto.preco,
                         quantity: 1,
-                        observacao: observacao // Adiciona observação ao item do carrinho
+                        observacao: observacao 
                     });
                 }
                 saveCart(cart);
