@@ -234,6 +234,7 @@ main > div:last-child {
     transition: transform .15s ease, box-shadow .15s ease;
     position: relative;
     min-width: 180px;
+    cursor: pointer; /* Adicionado para indicar que é clicável */
 }
 .card:hover {
     transform: translateY(-4px);
@@ -449,27 +450,6 @@ footer {
     padding: 14px;
     font-size: 1.1rem;
     margin-bottom: 10px;
-}
-.detalhe-pedido-rapido {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 20px;
-}
-.detalhe-pedido-rapido label {
-    font-size: 0.95rem;
-    color: var(--muted);
-}
-.detalhe-pedido-rapido input[type="number"] {
-    width: 70px;
-    text-align: center;
-}
-.detalhe-pedido-rapido button {
-    flex-grow: 1;
-    background-color: #ff9800;
-}
-.detalhe-pedido-rapido button:hover {
-    background-color: #f57c00;
 }
 
 /* MODAL DE CARRINHO */
@@ -838,6 +818,54 @@ footer {
 }
 
 /* =================================== */
+/* SKELETON LOADER (ESQUELETO)         */
+/* =================================== */
+@keyframes skeleton-pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+.skeleton-card {
+    width: calc((100% - 56px) / 5);
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 180px;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+.skeleton-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    background-color: #e0e0e0;
+}
+.skeleton-title {
+    width: 80%;
+    height: 1.2rem;
+    margin: 4px auto 0;
+    background-color: #e0e0e0;
+    border-radius: 6px;
+}
+.skeleton-price {
+    width: 40%;
+    height: 1.5rem;
+    margin: 8px auto 0;
+    background-color: #e0e0e0;
+    border-radius: 6px;
+}
+.skeleton-button {
+    width: 100%;
+    height: 38px;
+    margin-top: 4px;
+    background-color: #e0e0e0;
+    border-radius: 8px;
+}
+
+/* =================================== */
 /* RESPONSIVIDADE (AJUSTADO PARA 2 COLUNAS)*/
 /* =================================== */
 @media (max-width: 600px) {
@@ -933,20 +961,6 @@ footer {
     .detalhe-preco .preco-original {
         font-size: 0.9rem;
     }
-    .detalhe-pedido-rapido {
-        flex-wrap: wrap;
-    }
-    .detalhe-pedido-rapido label {
-        width: 100%;
-        margin-bottom: 0;
-    }
-    .detalhe-pedido-rapido input[type="number"] {
-        width: 60px;
-    }
-    .detalhe-pedido-rapido button {
-        font-size: 1rem;
-        padding: 12px;
-    }
     .modal-content {
         max-width: calc(100vw - 30px);
     }
@@ -985,6 +999,13 @@ footer {
     .btn-wizard-prev {
         width: 100%;
     }
+    
+    /* Skeleton responsivo */
+    .skeleton-card {
+        width: calc(50% - 5px);
+        min-width: 140px;
+        gap: 4px;
+    }
 }
 
 /* Ajuste para telas muito pequenas, forçando 1 coluna */
@@ -993,6 +1014,10 @@ footer {
         justify-content: center;
     }
     .card {
+        width: 100%;
+        max-width: 240px;
+    }
+    .skeleton-card {
         width: 100%;
         max-width: 240px;
     }

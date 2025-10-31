@@ -1,4 +1,4 @@
-// script.js (OTIMIZADO)
+// script.js (OTIMIZADO + SKELETON + ID ESTÁVEL - CORRIGIDO)
 
 // ======= CONFIG DA PÁGINA =======
 const SHEET_ID = "1gU34_gLsxTHDy_nxhtg91-Ld6VaU4Zba65dBkZD-2aQ";
@@ -20,17 +20,58 @@ let btnLimparFiltros, btnSortAsc, btnSortDesc;
 function removerAcentos(str) { return str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
 
 // ===================================
+// SLUGIFY (Cria ID estável a partir do nome)
+// ===================================
+function slugify(text) {
+    if (!text) {
+        return `produto-sem-nome-${Date.now()}`;
+    }
+    return removerAcentos(text.toLowerCase().trim())
+        .replace(/\s+/g, '-')           // Substitui espaços por -
+        .replace(/[^\w\-]+/g, '')       // Remove caracteres especiais (exceto -)
+        .replace(/\-\-+/g, '-');      // Substitui múltiplos -- por um só -
+}
+
+// ===================================
+// SKELETON LOADER
+// ===================================
+function showSkeletonLoaders(containerEl, count = 5) {
+    if (!containerEl) return;
+    vazioElemento(containerEl); 
+
+    const skeletonHTML = `
+        <div class="skeleton-card">
+            <div class="skeleton-img"></div>
+            <div class="skeleton-title"></div>
+            <div class="skeleton-price"></div>
+            <div class="skeleton-button"></div>
+        </div>
+    `;
+    
+    for (let i = 0; i < count; i++) {
+        containerEl.innerHTML += skeletonHTML;
+    }
+}
+
+// ===================================
 // LÓGICA DE CARREGAMENTO DA PLANILHA
 // ===================================
 async function fetchSheetJson(sheetId, gid = 0) { const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`; const res = await fetch(url); const txt = await res.text(); const start = txt.indexOf('('); const end = txt.lastIndexOf(')'); const jsonStr = txt.substring(start + 1, end); return JSON.parse(jsonStr); }
 
 function mapRowToProduct(row, headers) {
-    // As funções 'getCart' e 'formatPrice' agora vêm do checkout.js
     const obj = { images: [], ativo: true };
     headers.forEach((h, i) => { const cell = row[i]; const val = cell && cell.v !== undefined ? cell.v : ""; const header = (h || "").toString().trim().toLowerCase();
         if (header.match(/^id$/)) obj.id = val; else if (header.match(/nome|name|produto/)) obj.nome = val; else if (header.match(/pre[cç]o[ \-]?oferta/)) { if (typeof val === "number") { obj.precoOferta = val; } else { const cleaned = String(val).replace(/[R$\s.]/g, "").replace(",", "."); const n = parseFloat(cleaned); if (!isNaN(n) && n > 0) { obj.precoOferta = n; } } } else if (header.match(/pre[cç]o|price|valor/)) { if (typeof val === "number") { obj.preco = val; } else { const cleaned = String(val).replace(/[R$\s.]/g, "").replace(",", "."); const n = parseFloat(cleaned); obj.preco = isNaN(n) ? 0 : n; } } else if (header.match(/categoria|category/)) obj.categoria = val.toString().toLowerCase(); else if (header.match(/tipo|type/)) obj.tipo = val.toString().toLowerCase(); else if (header.match(/genero|gênero|genêro|sex|sexo/)) obj.genero = val.toString().toLowerCase(); else if (header.match(/destaque/)) obj.destaque = val; else if (header.match(/descricao|descri[cç][aã]o/)) obj.descricao = val; else if (header.match(/dataoferta/)) { if (cell && cell.f) obj.dataOferta = cell.f; else if (val && val.toString().includes('/')) obj.dataOferta = val.toString(); else obj.dataOferta = ""; } else if (header.match(/horaoferta/)) obj.horaOferta = val; else if (header.match(/^img\d?$|^imagem\d?$|^foto\d?$/)) { if (val) obj.images.push(val.toString()); } else if (header.match(/^ativo$/)) { obj.ativo = !(String(val).trim().toUpperCase() === 'N'); }
     });
-    obj.nome = obj.nome || ""; obj.preco = obj.preco !== undefined ? obj.preco : 0; obj.categoria = obj.categoria || "outros"; obj.tipo = obj.tipo || ""; obj.genero = obj.genero || ""; obj.id = (obj.id || `${Date.now()}-${Math.random()}`).toString(); obj.oferta = (obj.destaque && obj.destaque !== "") || (obj.dataOferta && obj.dataOferta !== ""); if (obj.images.length === 0) { obj.images.push("https://via.placeholder.com/800x800?text=Sem+Imagem"); }
+    obj.nome = obj.nome || ""; obj.preco = obj.preco !== undefined ? obj.preco : 0; obj.categoria = obj.categoria || "outros"; obj.tipo = obj.tipo || ""; obj.genero = obj.genero || ""; 
+    
+    if (obj.id) {
+        obj.id = obj.id.toString();
+    } else {
+        obj.id = slugify(obj.nome);
+    }
+    
+    obj.oferta = (obj.destaque && obj.destaque !== "") || (obj.dataOferta && obj.dataOferta !== ""); if (obj.images.length === 0) { obj.images.push("https://via.placeholder.com/800x800?text=Sem+Imagem"); }
     obj.precoOriginal = obj.preco;
     if (obj.precoOferta !== undefined && obj.precoOferta < obj.preco) {
         let ofertaExpiradaNaCarga = false;
@@ -64,7 +105,23 @@ function mapRowToProduct(row, headers) {
 function parseGvizResponse(resp) {
     const cols = resp.table.cols.map(c => c.label || c.id || ""); const rows = resp.table.rows || []; const produtos = rows.map(r => mapRowToProduct(r.c, cols)).filter(p => p.ativo);
     allProducts.clear(); dynamicCategories.clear();
-    produtos.forEach(p => { allProducts.set(p.id, p); if (!dynamicCategories.has(p.categoria)) { dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null }); } const catData = dynamicCategories.get(p.categoria); if (p.tipo) catData.tipos.add(p.tipo); if (p.genero) catData.generos.add(p.genero); });
+    
+    produtos.forEach(p => { 
+        allProducts.set(p.id, p); 
+        if (!dynamicCategories.has(p.categoria)) { 
+            dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null }); 
+        } 
+        const catData = dynamicCategories.get(p.categoria); 
+        
+        // ==============================================
+        // AQUI ESTÁ A CORREÇÃO
+        // ==============================================
+        if (p.tipo) catData.tipos.add(p.tipo); // Removido as aspas de p."tipo"
+        // ==============================================
+        
+        if (p.genero) catData.generos.add(p.genero); 
+    });
+    
     return produtos;
 }
 
@@ -84,7 +141,11 @@ function criarSecoesCategorias() {
     const categoriasOrdenadas = Array.from(dynamicCategories.keys()).sort();
     for (const categoria of categoriasOrdenadas) {
         const catData = dynamicCategories.get(categoria);
-        const sectionEl = document.createElement('div'); sectionEl.id = catData.sectionId; sectionEl.className = 'secao-categoria'; const titleEl = document.createElement('h2'); titleEl.className = 'titulo-secao'; titleEl.textContent = categoria.charAt(0).toUpperCase() + categoria.slice(1); const containerEl = document.createElement('div'); containerEl.className = 'container'; containerEl.id = catData.containerId; containerEl.innerHTML = `<div class="loading-message">Carregando ${categoria}...</div>`; sectionEl.appendChild(titleEl); sectionEl.appendChild(containerEl); mainElement.appendChild(sectionEl); catData.sectionEl = sectionEl; catData.containerEl = containerEl;
+        const sectionEl = document.createElement('div'); sectionEl.id = catData.sectionId; sectionEl.className = 'secao-categoria'; const titleEl = document.createElement('h2'); titleEl.className = 'titulo-secao'; titleEl.textContent = categoria.charAt(0).toUpperCase() + categoria.slice(1); const containerEl = document.createElement('div'); containerEl.className = 'container'; containerEl.id = catData.containerId; 
+        
+        showSkeletonLoaders(containerEl, 5); 
+        
+        sectionEl.appendChild(titleEl); sectionEl.appendChild(containerEl); mainElement.appendChild(sectionEl); catData.sectionEl = sectionEl; catData.containerEl = containerEl;
         const navLink = document.createElement('a'); navLink.href = `#${catData.sectionId}`; navLink.textContent = categoria.charAt(0).toUpperCase() + categoria.slice(1); navElement.appendChild(navLink);
     }
 }
@@ -101,11 +162,22 @@ function criarCardHTML(p) {
     const linkDetalhe = `detalhe.html?data=${encodeURIComponent(JSON.stringify(p))}`;
     const badgeHTML = p.oferta && p.destaque ? `<div class="card-badge">${escapeHtml(p.destaque)}</div>` : '';
     const timerHTML = p.oferta && p.dataOferta ? `<div class="card-timer" id="timer-${p.id}"></div>` : '';
-    const cart = getCart(); const isInCart = cart.find(item => item.id.toString() === p.id.toString()); const btnText = isInCart ? '✅ Já no carrinho' : 'Adicionar ao Carrinho'; const btnDisabled = isInCart ? 'disabled' : '';
+    const cart = getCart(); 
+    const isInCart = cart.find(item => item.id.toString() === p.id.toString()); 
+    const btnText = isInCart ? '✅ Já no carrinho' : 'Adicionar ao Carrinho'; 
+    const btnDisabled = isInCart ? 'disabled' : '';
+    
     const template = document.createElement('div'); template.className = "card"; template.innerHTML = `${badgeHTML}${timerHTML}<div class="card-img-main"><a href="${linkDetalhe}"><img src="${escapeHtml(mainImg)}" alt="${escapeHtml(p.nome)}" loading="lazy" class="card-img-main-pic"></a></div><div class="card-img-thumbs">${thumbsHTML}</div><h3>${escapeHtml(p.nome)}</h3><p class="preco-container">${precoOriginalFmt}<span class="preco-atual">${precoFmt}</span></p><button class="btn-add-cart" data-id="${escapeHtml(p.id)}" ${btnDisabled}>${btnText}</button>`; return template;
 }
 
-function mostrarMensagemNoContainer(container, msg){ if (!container) return; vazioElemento(container); const div = document.createElement('div'); div.className = 'loading-message'; div.textContent = msg; container.appendChild(div); }
+function mostrarMensagemNoContainer(container, msg){ 
+    if (!container) return; 
+    vazioElemento(container); 
+    const div = document.createElement('div'); 
+    div.className = 'loading-message'; 
+    div.textContent = msg; 
+    container.appendChild(div); 
+}
 
 function clearTimers(containerId) { if (activeTimers[containerId]) { activeTimers[containerId].forEach(intervalId => clearInterval(intervalId)); } activeTimers[containerId] = []; }
 
@@ -174,8 +246,14 @@ function iniciarContadores(produtos, containerId) {
 }
 
 function criarCardsEAdicionar(container, produtos){
-    if (!container) return; vazioElemento(container);
-    if(!produtos || produtos.length === 0){ mostrarMensagemNoContainer(container, 'Nenhum produto encontrado.'); return; }
+    if (!container) return; 
+    vazioElemento(container); 
+    
+    if(!produtos || produtos.length === 0){ 
+        mostrarMensagemNoContainer(container, 'Nenhum produto encontrado.'); 
+        return; 
+    }
+    
     produtos.forEach(p => { const card = criarCardHTML(p); container.appendChild(card); });
     iniciarContadores(produtos, container.id); 
 }
@@ -201,7 +279,7 @@ function handleAddToCartClick(e) {
     const btnClicked = e.target; const productId = btnClicked.dataset.id; const product = allProducts.get(productId);
     if (!product) return;
     let cart = getCart(); 
-    const existingItemIndex = cart.findIndex(item => item.id === product.id && !item.observacao);
+    const existingItemIndex = cart.findIndex(item => item.id === product.id && !item.observacao); 
     if (existingItemIndex > -1) { 
         cart[existingItemIndex].quantity++; 
     } else { 
@@ -284,7 +362,8 @@ function filtrarEExibirProdutos() {
 // FUNÇÃO PRINCIPAL (INICIALIZAÇÃO)
 // ===================================
 async function loadAndRender(){
-    mostrarMensagemNoContainer(listaOfertasEl, "Carregando produtos...");
+    showSkeletonLoaders(listaOfertasEl, 5);
+    
     vazioElemento(navElement);
     Array.from(mainElement.querySelectorAll('.secao-categoria')).forEach(el => el.remove());
     let produtos = []; 
@@ -299,13 +378,17 @@ async function loadAndRender(){
             const todosProdutosFallback = arr.map(obj => { const headers = Object.keys(obj); const row = headers.map(h => ({ v: obj[h] })); return mapRowToProduct(row, headers); });
             produtos = todosProdutosFallback.filter(p => p.ativo);
             allProducts.clear(); dynamicCategories.clear();
-            produtos.forEach(p => { allProducts.set(p.id, p); if (!dynamicCategories.has(p.categoria)) { dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null }); } const catData = dynamicCategories.get(p.categoria); if (p.tipo) catData.tipos.add(p.tipo); if (p.genero) catData.generos.add(p.genero); });
+            produtos.forEach(p => { allProducts.set(p.id, p); if (!dynamicCategories.has(p.categoria)) { dynamicCategories.set(p.categoria, { tipos: new Set(), generos: new Set(), containerId: `lista-${p.categoria}`, sectionId: `secao-${p.categoria}`, sectionEl: null, containerEl: null }); } const catData = dynamicCategories.get(p.categoria); 
+                if (p.tipo) catData.tipos.add(p.tipo); // Linha corrigida
+                if (p.genero) catData.generos.add(p.genero); });
             console.log('Dados carregados (opensheet):', allProducts.size, 'produtos ativos');
         }catch(err2){
             console.error('Erro ao carregar planilha pelo fallback:', err2);
             mostrarMensagemNoContainer(listaOfertasEl, 'Erro ao carregar produtos. Verifique o console.');
             criarSecoesCategorias(); 
-            for(const catData of dynamicCategories.values()){ if(catData.containerEl) mostrarMensagemNoContainer(catData.containerEl, 'Erro ao carregar produtos.'); }
+            for(const catData of dynamicCategories.values()){ 
+                if(catData.containerEl) mostrarMensagemNoContainer(catData.containerEl, 'Erro ao carregar produtos.'); 
+            }
             return;
         }
     }
@@ -318,7 +401,6 @@ async function loadAndRender(){
     }
     popularDropdown(filtroCategoria, dynamicCategories.keys(), "Todas as Categorias");
     filtrarEExibirProdutos(); 
-    // updateCartButtonText(); // Movido para initCheckout()
 
     // LISTENERS
     filtroPesquisa.addEventListener('input', filtrarEExibirProdutos);
@@ -342,8 +424,6 @@ async function loadAndRender(){
         handleAddToCartClick(e);
         handleCardClick(e); 
     });
-    
-    // Os listeners do modal/footer foram movidos para initCheckout()
 }
 
 // Inicializa tudo
@@ -371,8 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
          });
     });
     
-    // 2. Inicializa a lógica do checkout (que agora vem de checkout.js)
+    // 2. Inicializa a lógica do checkout (do checkout.js)
     initCheckout();
-    
-    // 3. Remove o verificador de URL (não é mais necessário)
 });
