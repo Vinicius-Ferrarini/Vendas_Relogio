@@ -59,9 +59,7 @@
             </div>
 
             <div class="wizard-step active" id="wizardStep1">
-                <div class="modal-body" id="listaCarrinhoModal">
-                    <p>Seu carrinho está vazio.</p>
-                </div>
+                <div class="modal-body" id="listaCarrinhoModal"></div>
                 <div class="modal-footer">
                     <h3 id="totalCarrinhoStep1">Total: R$ 0,00</h3>
                     <button id="btnNextStep" class="btn-wizard-next">Avançar para Entrega ➔</button>
@@ -70,7 +68,6 @@
 
             <div class="wizard-step" id="wizardStep2" style="display: none;">
                 <div class="modal-body wizard-step2-body">
-                    
                     <div class="modal-extra-info">
                         <div class="modal-payment">
                             <h3>Forma de Pagamento</h3>
@@ -80,9 +77,9 @@
                                 <option value="Pix">Pix</option>
                                 <option value="Crédito">Cartão de Crédito</option>
                                 <option value="Débito">Cartão de Débito</option>
+                                <option value="Marcar depois">Marcar depois</option>
                             </select>
                         </div>
-
                         <div class="modal-address">
                             <h3>Endereço de Entrega</h3>
                             <div class="address-fields">
@@ -106,12 +103,10 @@
                             </div>
                         </div>
                     </div>
-                    
                     <div class="modal-observacao">
                         <label for="observacaoPedido">Observações Gerais do Pedido:</label>
                         <textarea id="observacaoPedido" rows="3" placeholder="Ex: Entregar após as 18h, embrulhar para presente..."></textarea>
                     </div>
-
                 </div>
                 <div class="modal-footer step-2-footer">
                     <h3 id="totalCarrinhoStep2">Total: R$ 0,00</h3>
@@ -121,7 +116,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
     
@@ -130,5 +124,6 @@
     </footer>
     
     <script src="script.js"></script>
+    <script src="checkout.js"></script>
 </body>
 </html>

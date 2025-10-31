@@ -1,9 +1,8 @@
-// script.js (ATUALIZADO - WIZARD + ENTER NO CEP + LÓGICA DE FOCO)
+// script.js (OTIMIZADO)
 
-// ======= CONFIG =======
+// ======= CONFIG DA PÁGINA =======
 const SHEET_ID = "1gU34_gLsxTHDy_nxhtg91-Ld6VaU4Zba65dBkZD-2aQ";
 const GID = 0;
-const WHATSAPP_NUMBER = "5548999609870";
 // ======================
 
 let activeTimers = {};
@@ -14,271 +13,11 @@ let currentSortOrder = 'default';
 let mainElement, navElement, listaOfertasEl, secaoOfertasEl;
 let filtroPesquisa, filtroCategoria, filtroGenero, filtroTipoContainer, precoMin, precoMax;
 let btnLimparFiltros, btnSortAsc, btnSortDesc;
-let cepInput, btnBuscarCep;
-let btnNextStep, btnPrevStep, modalTituloEl; // Controles do Wizard
-let wizardStep1, wizardStep2; // Referência das Abas
 
 // ===================================
-// FUNÇÕES AUXILIARES
+// FUNÇÕES AUXILIARES (Específicas da página)
 // ===================================
-function escapeHtml(str){ if(!str && str !== 0) return ""; return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
-function vazioElemento(el){ while(el.firstChild) el.removeChild(el.firstChild); }
-function formatPrice(price) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price || 0); }
 function removerAcentos(str) { return str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
-
-// ===================================
-// LÓGICA DO CEP (MÁSCARA E BUSCA)
-// ===================================
-function formatarCEP(event) {
-    const input = event.target;
-    let valor = input.value.replace(/\D/g, '');
-    if (valor.length > 5) {
-        valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
-    }
-    input.value = valor.substring(0, 9);
-}
-
-// ATUALIZADO: Lógica de foco
-async function buscarCep(event) {
-    event.preventDefault(); 
-    const cep = cepInput.value.replace(/\D/g, '');
-    if (cep.length !== 8) {
-        alert('CEP inválido. Por favor, digite 8 números.');
-        return;
-    }
-    btnBuscarCep.textContent = 'Buscando...';
-    btnBuscarCep.disabled = true;
-    try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        if (!response.ok) throw new Error('Erro na rede');
-        const data = await response.json();
-        
-        if (data.erro) {
-            alert('CEP não encontrado. Verifique o número.');
-            document.getElementById('enderecoRua').value = '';
-            document.getElementById('enderecoBairro').value = '';
-            document.getElementById('enderecoCidade').value = '';
-        } else {
-            document.getElementById('enderecoRua').value = data.logradouro;
-            document.getElementById('enderecoBairro').value = data.bairro;
-            document.getElementById('enderecoCidade').value = data.localidade; 
-            
-            // --- NOVA LÓGICA DE FOCO ---
-            if (data.logradouro) {
-                // Se o CEP trouxe a rua, pula para o número
-                document.getElementById('enderecoNumero').focus(); 
-            } else {
-                // Se o CEP NÃO trouxe a rua (ex: CEP de cidade),
-                // foca no campo RUA para o usuário digitar.
-                document.getElementById('enderecoRua').focus();
-            }
-            // --- FIM DA NOVA LÓGICA ---
-        }
-    } catch (error) {
-        console.error('Erro ao buscar CEP:', error);
-        alert('Erro ao buscar CEP. Verifique sua conexão.');
-    } finally {
-        btnBuscarCep.textContent = 'Pesquisar';
-        btnBuscarCep.disabled = false;
-    }
-}
-
-// ===================================
-// FUNÇÕES DO CARRINHO
-// ===================================
-function getCart() { return JSON.parse(localStorage.getItem('leandrinhoCart') || '[]'); }
-function saveCart(cart) { localStorage.setItem('leandrinhoCart', JSON.stringify(cart)); }
-function updateCartButtonText() {
-    const btn = document.getElementById('enviarWhatsApp'); if (!btn) return;
-    const cart = getCart();
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    btn.textContent = totalItems > 0 ? `🟢 Ver Carrinho (${totalItems} ${totalItems > 1 ? 'itens' : 'item'})` : `🟢 Carrinho Vazio`;
-}
-
-// ===================================
-// Funções do Wizard
-// ===================================
-function goToStep(stepNumber) {
-    if (stepNumber === 1) {
-        wizardStep1.style.display = 'flex';
-        wizardStep2.style.display = 'none';
-        modalTituloEl.textContent = 'Passo 1: Meu Carrinho';
-    } else if (stepNumber === 2) {
-        wizardStep1.style.display = 'none';
-        wizardStep2.style.display = 'flex';
-        modalTituloEl.textContent = 'Passo 2: Entrega e Pagamento';
-    }
-}
-
-// ===================================
-// FUNÇÕES DO MODAL (ATUALIZADAS)
-// ===================================
-function resetAdicionaisModal() {
-    document.getElementById('formaPagamento').value = '';
-    document.getElementById('enderecoCep').value = '';
-    document.getElementById('enderecoRua').value = '';
-    document.getElementById('enderecoNumero').value = '';
-    document.getElementById('enderecoComplemento').value = '';
-    document.getElementById('enderecoBairro').value = '';
-    document.getElementById('enderecoCidade').value = '';
-    if (btnBuscarCep) {
-        btnBuscarCep.textContent = 'Pesquisar';
-        btnBuscarCep.disabled = false;
-    }
-    document.getElementById('observacaoPedido').value = '';
-}
-
-function abrirModalCarrinho() {
-    const cart = getCart(); 
-    const modal = document.getElementById('modalCarrinho'); 
-    const modalBody = document.getElementById('listaCarrinhoModal'); 
-    
-    const totalStep1El = document.getElementById('totalCarrinhoStep1');
-    const totalStep2El = document.getElementById('totalCarrinhoStep2');
-    const btnNext = document.getElementById('btnNextStep');
-
-    vazioElemento(modalBody);
-    
-    if (cart.length === 0) { 
-        modalBody.innerHTML = '<p>Seu carrinho está vazio.</p>'; 
-        totalStep1El.textContent = 'Total: R$ 0,00'; 
-        totalStep2El.textContent = 'Total: R$ 0,00'; 
-        btnNext.style.display = 'none'; 
-        resetAdicionaisModal();
-    }
-    else { 
-        let total = 0; 
-        cart.forEach(item => { 
-            const itemEl = document.createElement('div'); 
-            itemEl.className = 'cart-item-modal'; 
-            let nomeDisplay = escapeHtml(item.nome);
-            if (item.observacao) {
-                nomeDisplay += `<span class="item-obs-modal">Obs: ${escapeHtml(item.observacao)}</span>`;
-            }
-            itemEl.innerHTML = `<div class="cart-item-modal-info"><span class="nome">${nomeDisplay}</span><span class="preco">${formatPrice(item.preco)}</span></div><div class="cart-item-modal-controls"><button class="qty-btn decrease-qty" data-id="${escapeHtml(item.id)}" ${item.quantity <= 1 ? 'disabled' : ''}>-</button><span>${item.quantity}</span><button class="qty-btn increase-qty" data-id="${escapeHtml(item.id)}">+</button></div><button class="remover-item-btn" data-id="${escapeHtml(item.id)}">Remover</button>`; 
-            modalBody.appendChild(itemEl); 
-            total += item.preco * item.quantity; 
-        }); 
-        
-        const totalFormatado = formatPrice(total);
-        totalStep1El.textContent = `Total: ${totalFormatado}`; 
-        totalStep2El.textContent = `Total: ${totalFormatado}`; 
-        btnNext.style.display = 'block'; 
-        
-        resetAdicionaisModal();
-        document.getElementById('observacaoPedido').value = ''; 
-    }
-    
-    goToStep(1); // Sempre abre o modal no Passo 1
-    modal.style.display = 'flex';
-}
-function fecharModalCarrinho() { 
-    document.getElementById('modalCarrinho').style.display = 'none'; 
-    goToStep(1);
-}
-function handleRemoverItem(productId) {
-    let cart = getCart(); 
-    cart = cart.filter(item => item.id.toString() !== productId.toString()); 
-    saveCart(cart);
-    abrirModalCarrinho(); // Recarrega o modal
-    updateCartButtonText();
-    const cardBtns = document.querySelectorAll(`.btn-add-cart[data-id="${productId}"]`);
-    cardBtns.forEach(btn => { if (btn) { btn.textContent = 'Adicionar ao Carrinho'; btn.disabled = false; } });
-}
-function increaseQuantity(productId) {
-    let cart = getCart(); const itemIndex = cart.findIndex(item => item.id.toString() === productId.toString());
-    if (itemIndex > -1) { cart[itemIndex].quantity++; saveCart(cart); abrirModalCarrinho(); updateCartButtonText(); }
-}
-function decreaseQuantity(productId) {
-    let cart = getCart(); const itemIndex = cart.findIndex(item => item.id.toString() === productId.toString());
-    if (itemIndex > -1 && cart[itemIndex].quantity > 1) { cart[itemIndex].quantity--; saveCart(cart); abrirModalCarrinho(); updateCartButtonText(); }
-    else if (itemIndex > -1 && cart[itemIndex].quantity === 1) { handleRemoverItem(productId); }
-}
-
-function handleEnviarPedido() {
-    const cart = getCart(); 
-    const observacaoGeral = document.getElementById('observacaoPedido').value.trim();
-    const enviarBtn = document.getElementById('enviarPedidoModal');
-    
-    if (cart.length === 0){ alert('Seu carrinho está vazio.'); return; }
-    
-    const formaPagamento = document.getElementById('formaPagamento').value;
-    const cep = document.getElementById('enderecoCep').value.trim();
-    const rua = document.getElementById('enderecoRua').value.trim();
-    const numero = document.getElementById('enderecoNumero').value.trim();
-    const complemento = document.getElementById('enderecoComplemento').value.trim();
-    const bairro = document.getElementById('enderecoBairro').value.trim();
-    const cidade = document.getElementById('enderecoCidade').value.trim();
-
-    if (!formaPagamento) {
-        alert('Por favor, selecione uma forma de pagamento.');
-        document.getElementById('formaPagamento').focus();
-        return;
-    }
-
-    const hasAddressInput = cep || rua || numero || bairro || cidade;
-    if (hasAddressInput) {
-        if (!cep || !rua || !numero || !bairro || !cidade) {
-            alert('Para entrega, por favor, preencha todos os campos de endereço (CEP, Rua, Número, Bairro e Cidade).');
-            if (!cep) document.getElementById('enderecoCep').focus();
-            else if (!rua) document.getElementById('enderecoRua').focus();
-            else if (!numero) document.getElementById('enderecoNumero').focus();
-            else if (!bairro) document.getElementById('enderecoBairro').focus();
-            else if (!cidade) document.getElementById('enderecoCidade').focus();
-            return;
-        }
-    }
-
-    enviarBtn.disabled = true; enviarBtn.textContent = 'Abrindo WhatsApp...';
-
-    const lines = cart.map(item => { 
-        const itemTotal = formatPrice(item.preco * item.quantity); 
-        let itemText = `${item.quantity}x ${item.nome} (${formatPrice(item.preco)} cada) - ${itemTotal}`;
-        if (item.observacao) {
-            itemText += `\n  (Obs: ${item.observacao})`;
-        }
-        return itemText;
-    });
-
-    const subTotal = cart.reduce((sum, item) => sum + (item.preco * item.quantity), 0); 
-    const subTotalFmt = formatPrice(subTotal);
-    
-    let msg = `Olá! Gostaria de fazer o seguinte pedido:\n\n${lines.join('\n')}`; 
-    msg += `\n\n*Subtotal: ${subTotalFmt}*`;
-    msg += `\n\n*Forma de Pagamento:*\n${formaPagamento}`;
-
-    if (hasAddressInput) {
-        msg += `\n\n*Endereço de Entrega:*`;
-        msg += `\nCEP: ${cep}`;
-        msg += `\nRua: ${rua}, ${numero}`;
-        if (complemento) msg += `\nComplemento: ${complemento}`;
-        msg += `\nBairro: ${bairro}`;
-        msg += `\nCidade: ${cidade}`;
-    }
-
-    if (observacaoGeral) { 
-        msg += `\n\n*Observações Gerais:*\n${observacaoGeral}`; 
-    }
-
-    const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-    window.open(wa, '_blank');
-    
-    setTimeout(() => {
-        console.log("Limpando carrinho após envio...");
-        saveCart([]); 
-        resetAdicionaisModal(); 
-        updateCartButtonText();
-        document.querySelectorAll('.btn-add-cart:disabled').forEach(btn => { 
-            if (btn.id !== 'enviarPedidoModal') { 
-                btn.textContent = 'Adicionar ao Carrinho'; 
-                btn.disabled = false; 
-            } 
-        });
-        fecharModalCarrinho(); // Isso já reseta para o Passo 1
-        enviarBtn.disabled = false; 
-        enviarBtn.textContent = '🟢 Enviar Pedido';
-    }, 1500); 
-}
 
 // ===================================
 // LÓGICA DE CARREGAMENTO DA PLANILHA
@@ -286,6 +25,7 @@ function handleEnviarPedido() {
 async function fetchSheetJson(sheetId, gid = 0) { const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`; const res = await fetch(url); const txt = await res.text(); const start = txt.indexOf('('); const end = txt.lastIndexOf(')'); const jsonStr = txt.substring(start + 1, end); return JSON.parse(jsonStr); }
 
 function mapRowToProduct(row, headers) {
+    // As funções 'getCart' e 'formatPrice' agora vêm do checkout.js
     const obj = { images: [], ativo: true };
     headers.forEach((h, i) => { const cell = row[i]; const val = cell && cell.v !== undefined ? cell.v : ""; const header = (h || "").toString().trim().toLowerCase();
         if (header.match(/^id$/)) obj.id = val; else if (header.match(/nome|name|produto/)) obj.nome = val; else if (header.match(/pre[cç]o[ \-]?oferta/)) { if (typeof val === "number") { obj.precoOferta = val; } else { const cleaned = String(val).replace(/[R$\s.]/g, "").replace(",", "."); const n = parseFloat(cleaned); if (!isNaN(n) && n > 0) { obj.precoOferta = n; } } } else if (header.match(/pre[cç]o|price|valor/)) { if (typeof val === "number") { obj.preco = val; } else { const cleaned = String(val).replace(/[R$\s.]/g, "").replace(",", "."); const n = parseFloat(cleaned); obj.preco = isNaN(n) ? 0 : n; } } else if (header.match(/categoria|category/)) obj.categoria = val.toString().toLowerCase(); else if (header.match(/tipo|type/)) obj.tipo = val.toString().toLowerCase(); else if (header.match(/genero|gênero|genêro|sex|sexo/)) obj.genero = val.toString().toLowerCase(); else if (header.match(/destaque/)) obj.destaque = val; else if (header.match(/descricao|descri[cç][aã]o/)) obj.descricao = val; else if (header.match(/dataoferta/)) { if (cell && cell.f) obj.dataOferta = cell.f; else if (val && val.toString().includes('/')) obj.dataOferta = val.toString(); else obj.dataOferta = ""; } else if (header.match(/horaoferta/)) obj.horaOferta = val; else if (header.match(/^img\d?$|^imagem\d?$|^foto\d?$/)) { if (val) obj.images.push(val.toString()); } else if (header.match(/^ativo$/)) { obj.ativo = !(String(val).trim().toUpperCase() === 'N'); }
@@ -480,6 +220,21 @@ function handleAddToCartClick(e) {
     });
 }
 
+function handleCardClick(e) {
+    const interactiveClasses = ['btn-add-cart', 'card-thumb'];
+    if (interactiveClasses.some(cls => e.target.classList.contains(cls)) || 
+        e.target.closest('a')) {
+        return; 
+    }
+    const card = e.target.closest('.card');
+    if (card) {
+        const link = card.querySelector('.card-img-main a');
+        if (link) {
+            window.location.href = link.href; 
+        }
+    }
+}
+
 // ===================================
 // FUNÇÃO PRINCIPAL DE FILTRAGEM E EXIBIÇÃO
 // ===================================
@@ -563,7 +318,7 @@ async function loadAndRender(){
     }
     popularDropdown(filtroCategoria, dynamicCategories.keys(), "Todas as Categorias");
     filtrarEExibirProdutos(); 
-    updateCartButtonText();
+    // updateCartButtonText(); // Movido para initCheckout()
 
     // LISTENERS
     filtroPesquisa.addEventListener('input', filtrarEExibirProdutos);
@@ -581,43 +336,14 @@ async function loadAndRender(){
         filtroPesquisa.value = ""; filtroCategoria.value = ""; filtroGenero.value = ""; vazioElemento(filtroTipoContainer); precoMin.value = ""; precoMax.value = ""; filtroGenero.style.display = 'none'; filtroTipoContainer.style.display = 'none'; currentSortOrder = 'default';
         filtrarEExibirProdutos();
     });
-    mainElement.addEventListener('click', (e) => { adicionarClickHandlerMiniaturas(e); handleAddToCartClick(e); });
-    const btnWhats = document.getElementById('enviarWhatsApp'); btnWhats.addEventListener('click', () => { if (getCart().length === 0) { alert('Seu carrinho está vazio.'); return; } abrirModalCarrinho(); });
-    document.getElementById('fecharModal').addEventListener('click', fecharModalCarrinho);
-    document.getElementById('modalCarrinho').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) { fecharModalCarrinho(); } });
-    document.getElementById('listaCarrinhoModal').addEventListener('click', (e) => {
-        const target = e.target; 
-        const btnWithId = target.closest('[data-id]');
-        if (!btnWithId) return;
-        const productId = btnWithId.dataset.id;
-        
-        if (target.classList.contains('remover-item-btn')) { handleRemoverItem(productId); }
-        else if (target.classList.contains('increase-qty')) { increaseQuantity(productId); }
-        else if (target.classList.contains('decrease-qty')) { decreaseQuantity(productId); }
+    
+    mainElement.addEventListener('click', (e) => { 
+        adicionarClickHandlerMiniaturas(e); 
+        handleAddToCartClick(e);
+        handleCardClick(e); 
     });
-    document.getElementById('enviarPedidoModal').addEventListener('click', handleEnviarPedido);
-
-    // ATUALIZADO: Listeners do CEP e Wizard
-    if (cepInput) {
-        cepInput.addEventListener('input', formatarCEP); 
-        
-        // NOVO: Adiciona listener para o "Enter"
-        cepInput.addEventListener('keyup', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Previne qualquer submit
-                btnBuscarCep.click(); // Simula o clique no botão "Pesquisar"
-            }
-        });
-    }
-    if (btnBuscarCep) {
-        btnBuscarCep.addEventListener('click', buscarCep);
-    }
-    if (btnNextStep) {
-        btnNextStep.addEventListener('click', () => goToStep(2));
-    }
-    if (btnPrevStep) {
-        btnPrevStep.addEventListener('click', () => goToStep(1));
-    }
+    
+    // Os listeners do modal/footer foram movidos para initCheckout()
 }
 
 // Inicializa tudo
@@ -636,17 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSortAsc = document.getElementById('sortAsc');
     btnSortDesc = document.getElementById('sortDesc');
     
-    // Elementos do CEP
-    cepInput = document.getElementById('enderecoCep');
-    btnBuscarCep = document.getElementById('btnBuscarCep');
-
-    // Elementos do Wizard
-    btnNextStep = document.getElementById('btnNextStep');
-    btnPrevStep = document.getElementById('btnPrevStep');
-    modalTituloEl = document.getElementById('modalTitulo');
-    wizardStep1 = document.getElementById('wizardStep1');
-    wizardStep2 = document.getElementById('wizardStep2');
-
+    // 1. Inicializa a lógica da página principal
     loadAndRender().catch(e => {
         console.error('Erro na inicialização:', e);
         mostrarMensagemNoContainer(listaOfertasEl, 'Erro grave na inicialização. Verifique o console.');
@@ -654,4 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
              mostrarMensagemNoContainer(container, 'Erro ao carregar produtos.');
          });
     });
+    
+    // 2. Inicializa a lógica do checkout (que agora vem de checkout.js)
+    initCheckout();
+    
+    // 3. Remove o verificador de URL (não é mais necessário)
 });
