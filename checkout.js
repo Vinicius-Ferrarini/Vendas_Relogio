@@ -86,7 +86,9 @@ function updateCartButtonText() {
     const btn = document.getElementById('enviarWhatsApp'); if (!btn) return;
     const cart = getCart();
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    btn.textContent = totalItems > 0 ? `🟢 Ver Carrinho (${totalItems} ${totalItems > 1 ? 'itens' : 'item'})` : `🟢 Carrinho Vazio`;
+    
+    // ATUALIZADO: Emoji 🛒 adicionado
+    btn.textContent = totalItems > 0 ? `🛒 Ver Carrinho (${totalItems} ${totalItems > 1 ? 'itens' : 'item'})` : `🛒 Carrinho Vazio`;
 }
 
 // ===================================
@@ -100,11 +102,13 @@ function goToStep(stepNumber) {
     if (stepNumber === 1) {
         wizardStep1.style.display = 'flex';
         wizardStep2.style.display = 'none';
-        modalTituloEl.textContent = 'Passo 1: Meu Carrinho';
+        // ATUALIZADO: Emoji 🛒 adicionado
+        modalTituloEl.textContent = '🛒 Passo 1: Meu Carrinho';
     } else if (stepNumber === 2) {
         wizardStep1.style.display = 'none';
         wizardStep2.style.display = 'flex';
-        modalTituloEl.textContent = 'Passo 2: Entrega e Pagamento';
+        // ATUALIZADO: Emoji 🚚 adicionado
+        modalTituloEl.textContent = '🚚 Passo 2: Entrega e Pagamento';
     }
 }
 
@@ -135,12 +139,9 @@ function abrirModalCarrinho() {
     const totalStep2El = document.getElementById('totalCarrinhoStep2');
     const btnNext = document.getElementById('btnNextStep');
 
-    // ESTA É A LINHA MAIS IMPORTANTE DA CORREÇÃO
-    // Limpa o conteúdo anterior (sejam itens ou a mensagem de "vazio")
     vazioElemento(modalBody); 
     
     if (cart.length === 0) { 
-        // Agora, só adicionamos a mensagem se o carrinho ESTIVER vazio
         modalBody.innerHTML = '<p>Seu carrinho está vazio.</p>'; 
         totalStep1El.textContent = 'Total: R$ 0,00'; 
         totalStep2El.textContent = 'Total: R$ 0,00'; 
@@ -148,7 +149,6 @@ function abrirModalCarrinho() {
         resetAdicionaisModal();
     }
     else { 
-        // Se não estiver vazio, apenas adicionamos os itens
         let total = 0; 
         cart.forEach(item => { 
             const itemEl = document.createElement('div'); 
@@ -310,8 +310,6 @@ function initCheckout() {
         });
     }
     
-    // Verifica se os elementos do modal existem antes de adicionar listeners
-    // (isso evita erros caso o HTML ainda não tenha carregado, por exemplo)
     const modal = document.getElementById('modalCarrinho');
     if (modal) {
         document.getElementById('fecharModal').addEventListener('click', fecharModalCarrinho);

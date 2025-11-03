@@ -1,1 +1,119 @@
-function renderizarDetalhes(e){const a=document.getElementById("detalheProdutoContainer");if(!e)return void(a.innerHTML="<p>Produto não encontrado.</p>");const t=e.images&&e.images.length?e.images:["https://via.placeholder.com/800x800?text=Sem+Imagem"],n=t[0],r=t.slice(0,4).map(e=>`<img src="${escapeHtml(e)}" alt="Miniatura" class="card-thumb" loading="lazy">`).join(""),o=formatPrice(e.preco||0),d=e.precoOriginal&&e.precoOriginal!==e.preco?`<span class="preco-original">${formatPrice(e.precoOriginal)}</span>`:"",i=e.descricao?escapeHtml(e.descricao).replace(/\n/g,"<br>"):"Nenhuma descrição disponível.",c=getCart(),s=c.find(a=>a.id.toString()===e.id.toString()&&!a.observacao),l=s?"✅ Já no carrinho":"Adicionar ao Carrinho";a.innerHTML=`\n        <img src="${escapeHtml(n)}" alt="${escapeHtml(e.nome)}" id="detalhe-img-main">\n        <div class="card-img-thumbs">${r}</div>\n        <h1 class="detalhe-nome">${escapeHtml(e.nome)}</h1>\n        <div class="detalhe-preco">\n            ${d}\n            <span class="preco-atual">${o}</span>\n        </div>\n        \n        <div class="detalhe-observacao" style="margin-top:15px; margin-bottom:10px; display:flex; flex-direction:column;">\n            <label for="detalheObs" style="margin-bottom:5px; font-weight:600;">Observação (Opcional):</label>\n            <textarea id="detalheObs" placeholder="Ex: Ajuste de pulseira, embalar para presente..." style="width:100%; min-height:60px; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;"></textarea>\n        </div>\n\n        <button class="btn-add-cart detalhe-btn-whats" id="detalheAddCart">${l}</button>\n        \n        <p class="detalhe-descricao">${i}</p>\n    `,s&&(document.getElementById("detalheAddCart").disabled=!0),adicionarClickHandlerMiniaturasDetalhe(a)}function adicionarClickHandlerMiniaturasDetalhe(e){e.addEventListener("click",e=>{if(e.target.classList.contains("card-thumb")){e.preventDefault();const a=document.getElementById("detalhe-img-main");a&&(a.src=e.target.src)}})}document.addEventListener("DOMContentLoaded",()=>{let e;initCheckout();try{const a=new URLSearchParams(window.location.search).get("data");if(!a)throw new Error("Nenhum dado de produto encontrado na URL.");e=JSON.parse(decodeURIComponent(a)),e.id=e.id.toString(),renderizarDetalhes(e),document.title=`${e.nome||"Detalhes"} - Eleven Store`;const t=document.getElementById("detalheAddCart");t&&t.addEventListener("click",()=>{let a=getCart();const t=document.getElementById("detalheObs"),n=t?t.value.trim():"",r=a.findIndex(a=>a.id===e.id&&(a.observacao||"")===n);r>-1?a[r].quantity++:a.push({id:e.id,nome:e.nome,preco:e.preco,quantity:1,observacao:n}),saveCart(a),updateCartButtonText(),abrirModalCarrinho()})}catch(e){console.error("Erro ao carregar detalhes do produto:",e),document.getElementById("detalheProdutoContainer").innerHTML=`<p class="erro">Não foi possível carregar os detalhes do produto. Por favor, tente novamente. ${e.message}</p>`}});
+// detalhe.js (OTIMIZADO)
+
+// ===================================
+// LÓGICA DA PÁGINA DE DETALHES
+// ===================================
+function renderizarDetalhes(produto) {
+    const container = document.getElementById("detalheProdutoContainer");
+    if (!produto) {
+        container.innerHTML = "<p>Produto não encontrado.</p>";
+        return;
+    }
+
+    // Funções 'escapeHtml' e 'formatPrice' vêm de checkout.js
+    const images = produto.images && produto.images.length ? produto.images : ["https://via.placeholder.com/800x800?text=Sem+Imagem"];
+    const mainImg = images[0];
+    const thumbnails = images.slice(0, 4).map(img => `<img src="${escapeHtml(img)}" alt="Miniatura" class="card-thumb" loading="lazy">`).join('');
+
+    const precoFmt = formatPrice(produto.preco || 0);
+    const precoOriginalFmt = (produto.precoOriginal && produto.precoOriginal !== produto.preco)
+                           ? `<span class="preco-original">${formatPrice(produto.precoOriginal)}</span>` 
+                           : "";
+    
+    const descricaoFmt = produto.descricao ? escapeHtml(produto.descricao).replace(/\n/g, '<br>') : "Nenhuma descrição disponível.";
+
+    // 'getCart' vem de checkout.js
+    const cart = getCart();
+    const isInCart = cart.find(item => item.id.toString() === produto.id.toString() && !item.observacao); 
+    const btnText = isInCart ? "✅ Já no carrinho" : "Adicionar ao Carrinho";
+
+    container.innerHTML = `
+        <img src="${escapeHtml(mainImg)}" alt="${escapeHtml(produto.nome)}" id="detalhe-img-main">
+        <div class="card-img-thumbs">${thumbnails}</div>
+        <h1 class="detalhe-nome">${escapeHtml(produto.nome)}</h1>
+        <div class="detalhe-preco">
+            ${precoOriginalFmt}
+            <span class="preco-atual">${precoFmt}</span>
+        </div>
+        
+        <div class="detalhe-observacao" style="margin-top:15px; margin-bottom:10px; display:flex; flex-direction:column;">
+            <label for="detalheObs" style="margin-bottom:5px; font-weight:600;">Observação (Opcional):</label>
+            <textarea id="detalheObs" placeholder="Ex: Ajuste de pulseira, embalar para presente..." style="width:100%; min-height:60px; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;"></textarea>
+        </div>
+
+        <button class="btn-add-cart detalhe-btn-whats" id="detalheAddCart">${btnText}</button>
+        
+        <p class="detalhe-descricao">${descricaoFmt}</p>
+    `;
+    
+    if (isInCart) {
+         document.getElementById("detalheAddCart").disabled = true;
+    }
+
+    adicionarClickHandlerMiniaturasDetalhe(container);
+}
+
+function adicionarClickHandlerMiniaturasDetalhe(container) {
+    container.addEventListener("click", (e => {
+        if (e.target.classList.contains("card-thumb")) {
+            e.preventDefault();
+            const mainImgEl = document.getElementById("detalhe-img-main");
+            if (mainImgEl) mainImgEl.src = e.target.src;
+        }
+    }));
+}
+
+// ===================================
+// INICIALIZAÇÃO DA PÁGINA
+// ===================================
+document.addEventListener("DOMContentLoaded", (() => {
+    
+    // 1. Inicializa a lógica do checkout (que vem de checkout.js)
+    initCheckout();
+
+    // 2. Inicializa o conteúdo específico desta página
+    let produto;
+    try {
+        const dataParam = new URLSearchParams(window.location.search).get("data");
+        if (!dataParam) throw new Error("Nenhum dado de produto encontrado na URL.");
+        
+        produto = JSON.parse(decodeURIComponent(dataParam));
+        produto.id = produto.id.toString(); 
+        
+        renderizarDetalhes(produto);
+        
+        document.title = `${produto.nome || "Detalhes"} - Eleven Store`;
+
+        const btnAddCart = document.getElementById("detalheAddCart");
+        if (btnAddCart) {
+            btnAddCart.addEventListener("click", (() => {
+                let cart = getCart(); // getCart() vem de checkout.js
+                const obsEl = document.getElementById("detalheObs");
+                const observacao = obsEl ? obsEl.value.trim() : "";
+                
+                const existingIndex = cart.findIndex(item => item.id === produto.id && (item.observacao || "") === observacao);
+                
+                if (existingIndex > -1) {
+                    cart[existingIndex].quantity++;
+                } else {
+                    cart.push({
+                        id: produto.id,
+                        nome: produto.nome,
+                        preco: produto.preco,
+                        quantity: 1,
+                        observacao: observacao
+                    });
+                }
+                saveCart(cart); // saveCart() vem de checkout.js
+                
+                updateCartButtonText(); // vem de checkout.js
+                
+                abrirModalCarrinho(); // vem de checkout.js
+            }));
+        }
+
+    } catch (err) {
+        console.error("Erro ao carregar detalhes do produto:", err);
+        document.getElementById("detalheProdutoContainer").innerHTML = `<p class="erro">Não foi possível carregar os detalhes do produto. Por favor, tente novamente. ${err.message}</p>`;
+    }
+}));
