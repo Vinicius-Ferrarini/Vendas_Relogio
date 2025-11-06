@@ -153,10 +153,6 @@ function abrirModalCarrinho() {
                 nomeDisplay += `<span class="item-obs-modal">Obs: ${escapeHtml(item.observacao)}</span>`;
             }
 
-            // ==============================================
-            // AQUI ESTÁ A ESTRUTURA HTML CORRIGIDA
-            // ==============================================
-            // Agrupamos os controles e o botão "Remover" em "cart-item-modal-actions"
             itemEl.innerHTML = `
                 <div class="cart-item-modal-info">
                     <span class="nome">${nomeDisplay}</span>
@@ -170,7 +166,6 @@ function abrirModalCarrinho() {
                     </div>
                     <button class="remover-item-btn" data-id="${escapeHtml(item.id)}">Remover</button>
                 </div>`;
-            // ==============================================
 
             modalBody.appendChild(itemEl); 
             total += item.preco * item.quantity; 
@@ -361,6 +356,18 @@ function initCheckout() {
     } else {
         console.error("O HTML do modal não foi encontrado. O checkout não pode ser inicializado.");
     }
+
+    // ==============================================
+    // ATUALIZADO: Nova mensagem do botão do header
+    // ==============================================
+    const whatsappHeaderButton = document.getElementById('whatsappHeaderButton');
+    if (whatsappHeaderButton) {
+        // Esta é a nova mensagem que você pediu
+        const waMsg = encodeURIComponent("Vim do site Eleven Store e gostaria de verificar sobre ...");
+        whatsappHeaderButton.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`;
+        whatsappHeaderButton.target = "_blank"; // Abrir em nova aba
+    }
+    // ==============================================
 
     updateCartButtonText();
 }

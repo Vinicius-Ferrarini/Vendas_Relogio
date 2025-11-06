@@ -39,7 +39,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* Impede quebra no desktop */
     max-width: 1100px;
     margin: 0 auto;
 }
@@ -56,8 +56,11 @@ header {
 nav {
     display: flex;
     gap: 15px;
-    flex-wrap: wrap;
     justify-content: flex-end;
+    flex-grow: 1; 
+    flex-wrap: nowrap;     
+    overflow-x: auto;      
+    min-width: 0;          
 }
 nav a {
     color: #fff;
@@ -67,39 +70,128 @@ nav a {
     padding: 5px 10px;
     border-radius: 6px;
     transition: background-color 0.2s ease;
+    white-space: nowrap;   
 }
 nav a:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* =================================== */
-/* FILTROS                             */
-/* =================================== */
-.controls {
+/* Botão WhatsApp Header (Estilo WEGG) */
+.btn-whatsapp-header {
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 8px 12px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--accent); 
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 99px; /* Pílula */
+    transition: all 0.2s ease;
+    margin-left: 15px; /* Separação */
+    flex-shrink: 0; 
+}
+.btn-whatsapp-header:hover {
+    background-color: #1da453; 
+    transform: scale(1.05);
+}
+.btn-whatsapp-header img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+
+/* =================================== */
+/* FILTROS (REESTRUTURADO) */
+/* =================================== */
+
+/* ============================================== */
+/* CORREÇÃO 1: LAYOUT DA BARRA DE FILTRO */
+/* ============================================== */
+
+/* Container da Barra de Pesquisa */
+.search-bar-container {
+    flex-grow: 1; /* Faz a barra de pesquisa crescer */
+    min-width: 200px; /* Largura mínima */
+}
+
+/* Botão de "Mostrar Filtros" (AGORA É GLOBAL) */
+.btn-toggle-filters {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: auto; 
+    min-width: 120px; /* Reduzido */
+    padding: 10px 15px;
+    font-size: 1rem;
+    font-weight: 600;
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #d1d5db; /* Estilo igual ao input */
+    border-radius: 8px;
+    text-align: left;
+    cursor: pointer;
+    flex-shrink: 0; /* Impede que o botão encolha */
+}
+.btn-toggle-filters:hover {
+    background-color: #e9e9e9;
+}
+.filter-btn-icon {
+    margin-right: 8px;
+}
+.filter-btn-text {
+    flex-grow: 1; 
+}
+.filter-btn-arrow {
+    margin-left: 8px;
+    font-size: 0.8rem;
+    transition: transform 0.2s ease; 
+}
+
+/* Container dos filtros principais */
+.controls {
+    display: flex; /* Muda para flex */
+    flex-direction: row; /* Linha por padrão */
+    flex-wrap: wrap; /* Permite que a sanfona quebre a linha */
+    align-items: center; /* Alinha Pesquisar e Filtros */
+    gap: 10px; /* Espaço entre Pesquisar e Filtros */
+    justify-content: flex-start;
+    padding: 12px;
     background: var(--card);
     box-shadow: 0 2px 6px rgba(2, 6, 23, 0.06);
+    max-width: 1100px;
+    margin: 0 auto;
+    border-top: 1px solid #f0f0f0;
 }
 .filters-section {
-    display: flex;
+    display: none; /* ESCONDIDO POR PADRÃO */
     gap: 8px;
     align-items: center;
     flex-wrap: wrap;
-    padding: 6px;
+    padding: 10px 6px 6px 6px; /* Adiciona padding em cima */
     border-radius: 8px;
     justify-content: center;
+    flex-basis: 100%; /* Ocupa 100% da largura, quebrando a linha */
+    width: 100%; 
+    border-top: 1px solid #eee; /* Linha separadora */
+    margin-top: 10px; /* Espaço */
 }
-.filters-section h3 {
-    width: 100%;
-    margin: 0 0 6px 0;
-    font-size: 0.95rem;
-    color: var(--muted);
-    text-align: center;
+
+/* Classe de JS que MOSTRA os filtros */
+.controls.filters-visible .filters-section {
+    display: flex;
 }
+/* Classe de JS que GIRA a seta */
+.controls.filters-visible .filter-btn-arrow {
+    transform: rotate(180deg);
+}
+
+/* ============================================== */
+/* FIM DA CORREÇÃO 1 */
+/* ============================================== */
+
 .filtro-grupo {
     display: flex;
     gap: 8px;
@@ -111,8 +203,7 @@ nav a:hover {
     border-radius: 8px;
     border: 1px solid #d1d5db;
     font-size: 0.95rem;
-    min-width: 180px;
-    flex-grow: 1;
+    width: 100%; /* Ocupa 100% do seu container */
 }
 select, input[type="number"], button, textarea {
     padding: 8px 10px;
@@ -311,6 +402,11 @@ main > div:last-child {
     flex-shrink: 0;
     line-height: 1.3;
     min-height: 2.6rem; 
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; 
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .card .preco-container {
     margin: auto 0 0;
@@ -380,37 +476,33 @@ footer {
     border-radius: 10px;
 }
 
-/* ============================================== */
-/* PÁGINA DE DETALHES (NOVOS ESTILOS) */
-/* ============================================== */
+/* PÁGINA DE DETALHES */
 .detalhe-container {
-    max-width: 1000px; /* Aumentado para o layout de 2 colunas */
+    max-width: 1000px;
     margin: 20px auto;
     padding: 20px;
     background: var(--card);
     border-radius: 12px;
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
-
 .produto-detalhe-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
+    grid-template-columns: 1fr 1fr;
     gap: 30px;
 }
 .produto-galeria {
     display: flex;
     gap: 10px;
-    /* Adiciona um 'sticky' leve para a galeria acompanhar a rolagem */
     position: sticky;
-    top: 100px; /* (Altura do header + um espaço) */
+    top: 100px;
 }
 .galeria-thumbnails {
-    flex: 0 0 80px; /* Largura fixa para thumbnails */
+    flex: 0 0 80px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-height: 500px; /* Altura máxima (igual da imagem) */
-    overflow-y: auto; /* Permite rolar se tiver muitas thumbs */
+    max-height: 500px;
+    overflow-y: auto;
 }
 .galeria-thumbnails img {
     width: 100%;
@@ -426,13 +518,13 @@ footer {
     border-color: var(--accent);
 }
 .galeria-imagem-principal {
-    flex: 1; /* Ocupa o resto do espaço */
+    flex: 1;
 }
 #detalhe-img-main {
     width: 100%;
-    height: auto; /* Altura automática baseada na largura */
-    max-height: 500px; /* Limite de altura */
-    object-fit: contain; /* 'contain' para não cortar */
+    height: auto;
+    max-height: 500px;
+    object-fit: contain;
     border-radius: 8px;
     border: 1px solid #f0f0f0;
 }
@@ -450,12 +542,12 @@ footer {
     margin-bottom: 20px;
 }
 .detalhe-preco .preco-atual {
-    font-size: 2rem; /* Maior */
+    font-size: 2rem;
     font-weight: 700;
     color: var(--accent);
 }
 .detalhe-preco .preco-original {
-    font-size: 1.1rem; /* Maior */
+    font-size: 1.1rem;
     font-weight: 400;
     color: var(--muted);
     text-decoration: line-through;
@@ -911,24 +1003,24 @@ footer {
 /* =================================== */
 /* RESPONSIVIDADE */
 /* =================================== */
-@media (max-width: 800px) { /* Ponto de quebra para a página de detalhes */
+@media (max-width: 800px) { 
     .produto-detalhe-grid {
-        grid-template-columns: 1fr; /* Coluna única */
+        grid-template-columns: 1fr;
     }
     .produto-galeria {
-        flex-direction: column-reverse; /* Imagem principal primeiro */
-        position: static; /* Remove o sticky */
+        flex-direction: column-reverse;
+        position: static;
     }
     .galeria-thumbnails {
-        flex-direction: row; /* Thumbnails na horizontal */
-        overflow-x: auto; /* Permite rolar */
+        flex-direction: row;
+        overflow-x: auto;
         flex: 1;
-        max-height: none; /* Remove limite de altura */
+        max-height: none;
     }
     .galeria-thumbnails img {
-        width: 60px;  /* Tamanho fixo para thumbs mobile */
+        width: 60px;
         height: 60px; 
-        flex-shrink: 0; /* Impede que encolham */
+        flex-shrink: 0;
     }
     .detalhe-nome {
         font-size: 1.5rem;
@@ -942,6 +1034,7 @@ footer {
     .header-content {
         justify-content: center;
         gap: 10px;
+        flex-wrap: wrap; /* Habilita o wrap SÓ no mobile */
     }
     .header-logo img {
         width: 8rem; 
@@ -949,11 +1042,37 @@ footer {
     nav {
         justify-content: center;
         width: 100%;
+        order: 1; 
+        flex-grow: 0; 
+        flex-wrap: wrap;     
+        overflow-x: hidden;  
     }
     nav a {
         font-size: 0.9rem;
         padding: 4px 8px;
+        white-space: normal; 
     }
+    .btn-whatsapp-header {
+        width: 100%;
+        max-width: 420px;
+        justify-content: center;
+        margin-left: 0;
+        order: 2; 
+    }
+    
+    /* Regras do Filtro Sanfona (Mobile) */
+    .controls {
+        flex-direction: row; /* Mantém a linha */
+        align-items: center; 
+    }
+    .btn-toggle-filters {
+        width: auto; /* Botão com largura automática */
+        flex-shrink: 0;
+    }
+    .search-bar-container {
+        flex-grow: 1; /* Pesquisa cresce */
+    }
+    
     #secao-ofertas, .secao-categoria {
         scroll-margin-top: 8rem; 
     }
@@ -1015,7 +1134,6 @@ footer {
         padding: 8px;
         margin-top: 4px;
     }
-    
     .modal-content {
         max-width: calc(100vw - 30px);
     }
