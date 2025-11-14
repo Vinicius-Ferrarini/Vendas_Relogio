@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Eleven Store Logo" width="200">
+  <img src="./img/logo.png" alt="Eleven Store Logo" width="200">
 </p>
 
 <h1 align="center">
